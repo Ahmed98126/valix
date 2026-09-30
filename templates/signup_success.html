@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Created - Valix</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body { 
+            font-family: 'Inter', sans-serif;
+        }
+        
+        @keyframes checkmark {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.2);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        
+        .checkmark {
+            animation: checkmark 0.6s ease-out;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .fade-in-up {
+            animation: fadeInUp 0.6s ease-out;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex items-center justify-center p-4">
+    <div class="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center fade-in-up">
+        <!-- Success Icon -->
+        <div class="mb-6 flex justify-center">
+            <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center checkmark">
+                <svg class="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+            </div>
+        </div>
+        
+        <!-- Success Message -->
+        <h1 class="text-3xl font-bold text-gray-900 mb-3">Account Created Successfully! 🎉</h1>
+        <p class="text-gray-600 mb-6">
+            {% if name %}
+                Welcome, <strong>{{ name }}</strong>!
+            {% else %}
+                Welcome to Valix!
+            {% endif %}
+        </p>
+        
+        <!-- Account Details -->
+        <div class="bg-gray-50 rounded-lg p-4 mb-6 text-left">
+            <div class="space-y-2 text-sm">
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Email:</span>
+                    <span class="font-medium text-gray-900">{{ email }}</span>
+                </div>
+                {% if organization %}
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Organization:</span>
+                    <span class="font-medium text-gray-900">{{ organization }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Info Message -->
+        {% if verify %}
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <div class="flex items-start gap-3">
+                <svg class="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                </svg>
+                <div>
+                    <p class="text-sm text-blue-800 font-medium mb-1">
+                        <strong>📧 Check your email!</strong>
+                    </p>
+                    <p class="text-sm text-blue-700">
+                        We've sent a verification email to <strong>{{ email }}</strong>. Please click the link in the email to verify your account and complete your registration.
+                    </p>
+                    <p class="text-xs text-blue-600 mt-2">
+                        The verification link will expire in 48 hours.
+                    </p>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <p class="text-sm text-blue-800">
+                <strong>📧 Check your email!</strong> We've sent a welcome email to <strong>{{ email }}</strong> with getting started information.
+            </p>
+        </div>
+        {% endif %}
+        
+        <!-- Action Buttons -->
+        <div class="space-y-3">
+            {% if verify %}
+            <a 
+                href="/login" 
+                class="block w-full bg-black text-white py-3 px-4 rounded-lg font-medium hover:bg-gray-900 transition text-center"
+            >
+                Go to Sign In
+            </a>
+            <p class="text-xs text-gray-500 text-center">
+                After verifying your email, you can sign in to access your dashboard.
+            </p>
+            {% else %}
+            <a 
+                href="/dashboard" 
+                class="block w-full bg-black text-white py-3 px-4 rounded-lg font-medium hover:bg-gray-900 transition text-center"
+            >
+                Go to Dashboard
+            </a>
+            <a 
+                href="/login" 
+                class="block w-full border-2 border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium hover:border-gray-400 transition text-center"
+            >
+                Sign In
+            </a>
+            {% endif %}
+        </div>
+        
+        <!-- Footer -->
+        <p class="mt-6 text-xs text-gray-500">
+            Need help? Contact our support team.
+        </p>
+    </div>
+</body>
+</html>
+

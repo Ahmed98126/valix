@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Valix - AI-Powered Invoice Validation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/static/css/invo-sync.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-white text-black overflow-x-hidden">
+    <!-- Navigation - Always visible, sticky at top -->
+    <nav class="sticky-nav flex items-center justify-between px-8 py-6" style="position: sticky; top: 0; z-index: 1000;">
+        <div class="flex items-center gap-2">
+            <div class="logo-container flex items-center gap-2">
+                <img src="/static/images/valix-logo.svg" alt="Valix" class="h-8" />
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <a href="#features" class="text-sm text-gray-600 hover:text-black transition font-medium">Features</a>
+            <a href="#pricing" class="text-sm text-gray-600 hover:text-black transition font-medium">Pricing</a>
+            <a href="/docs" class="text-sm text-gray-600 hover:text-black transition font-medium">Docs</a>
+            <a href="/login" class="px-4 py-2 border border-black text-black hover:bg-black hover:text-white transition rounded-full text-sm font-medium">
+                Sign In
+            </a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="hero-section max-w-7xl mx-auto px-8 py-20 lg:py-32">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+            <!-- Left Content -->
+            <div class="fade-in-left">
+                <p class="text-sm font-medium text-gray-500 mb-4 uppercase tracking-wide">Valix</p>
+                <h1 class="text-5xl lg:text-7xl font-bold leading-tight mb-6">
+                    Invoice validation that <span class="gradient-text">syncs</span> with your workflow.
+                </h1>
+                <p class="text-lg lg:text-xl text-gray-600 mb-8 leading-relaxed">
+                    Upload invoices. Get instant validation. Make confident payment decisions. Built for commercial property managers and finance teams who demand precision and speed.
+                </p>
+
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <a href="/login" class="btn-primary bg-black text-white hover:bg-gray-900 h-14 px-8 rounded-full text-base font-medium flex items-center justify-center">
+                        Get Started Free
+                        <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                        </svg>
+                    </a>
+                    <button class="border-2 border-gray-300 text-black hover:border-black hover:bg-gray-50 h-14 px-8 rounded-full text-base bg-transparent transition font-medium">
+                        Watch Demo
+                    </button>
+                </div>
+                
+                <!-- Stats -->
+                <div class="mt-12 flex gap-8 fade-in-up">
+                    <div>
+                        <p class="text-2xl font-bold">10x</p>
+                        <p class="text-sm text-gray-600">Faster Processing</p>
+                    </div>
+                    <div>
+                        <p class="text-2xl font-bold">99.9%</p>
+                        <p class="text-sm text-gray-600">Accuracy Rate</p>
+                    </div>
+                    <div>
+                        <p class="text-2xl font-bold">24/7</p>
+                        <p class="text-sm text-gray-600">Available</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Visual -->
+            <div class="relative fade-in-right animate-float">
+                <div class="gradient-bg rounded-3xl h-[500px] flex items-center justify-center border border-gray-200 relative overflow-hidden">
+                    <!-- Animated background elements -->
+                    <div class="absolute top-10 left-10 w-32 h-32 bg-black/5 rounded-full blur-2xl animate-pulse"></div>
+                    <div class="absolute bottom-10 right-10 w-40 h-40 bg-black/5 rounded-full blur-2xl animate-pulse" style="animation-delay: 1s;"></div>
+                    
+                    <!-- Main visual card -->
+                    <div class="relative z-10 bg-white rounded-2xl p-8 shadow-2xl border border-gray-200 hover-lift max-w-sm w-full">
+                        <div class="flex items-center justify-between mb-6">
+                            <div>
+                                <p class="text-sm text-gray-500 mb-1">Invoice Status</p>
+                                <p class="text-2xl font-bold">Validated</p>
+                            </div>
+                            <div class="w-12 h-12 bg-black rounded-lg flex items-center justify-center">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                                <span class="text-sm font-medium text-green-800">Valid Invoices</span>
+                                <span class="text-lg font-bold text-green-900">1,234</span>
+                            </div>
+                            <div class="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+                                <span class="text-sm font-medium text-red-800">Invalid Invoices</span>
+                                <span class="text-lg font-bold text-red-900">56</span>
+                            </div>
+                            <div class="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
+                                <span class="text-sm font-medium text-yellow-800">Needs Review</span>
+                                <span class="text-lg font-bold text-yellow-900">12</span>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6 pt-6 border-t border-gray-200">
+                            <div class="flex items-center gap-2 text-sm text-gray-600">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                </svg>
+                                <span>AI-Powered Analysis</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features Section -->
+    <div id="features" class="bg-gray-50 py-24 border-t border-gray-200">
+        <div class="max-w-7xl mx-auto px-8">
+            <div class="text-center mb-16 fade-in-up">
+                <h2 class="text-4xl lg:text-5xl font-bold mb-4">Why choose Valix</h2>
+                <p class="text-lg lg:text-xl text-gray-600">Everything you need to validate invoices faster and smarter.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Feature 1 -->
+                <div class="card feature-card bg-white p-8 rounded-2xl border-2 border-gray-200 fade-in-up">
+                    <div class="w-14 h-14 bg-black rounded-xl flex items-center justify-center mb-6 hover-scale">
+                        <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-3">Instant Validation</h3>
+                    <p class="text-gray-600 leading-relaxed">Upload invoices and get results immediately. No waiting, no complexity. Process hundreds of invoices in seconds with AI-powered validation.</p>
+                </div>
+
+                <!-- Feature 2 -->
+                <div class="card feature-card bg-white p-8 rounded-2xl border-2 border-gray-200 fade-in-up" style="transition-delay: 0.1s;">
+                    <div class="w-14 h-14 bg-black rounded-xl flex items-center justify-center mb-6 hover-scale">
+                        <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-3">Enterprise Security</h3>
+                    <p class="text-gray-600 leading-relaxed">Your data is encrypted and protected. Built for compliance and privacy. Multi-tenant isolation ensures complete data separation between clients.</p>
+                </div>
+
+                <!-- Feature 3 -->
+                <div class="card feature-card bg-white p-8 rounded-2xl border-2 border-gray-200 fade-in-up" style="transition-delay: 0.2s;">
+                    <div class="w-14 h-14 bg-black rounded-xl flex items-center justify-center mb-6 hover-scale">
+                        <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-3">Always Accurate</h3>
+                    <p class="text-gray-600 leading-relaxed">AI-assisted validation with human oversight. Get confident decisions with detailed explanations for every validation result.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- How It Works Section -->
+    <div class="py-24 bg-white">
+        <div class="max-w-7xl mx-auto px-8">
+            <div class="text-center mb-16 fade-in-up">
+                <h2 class="text-4xl lg:text-5xl font-bold mb-4">How it works</h2>
+                <p class="text-lg text-gray-600">Simple, fast, and reliable invoice validation in three steps</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
+                <div class="text-center fade-in-up">
+                    <div class="w-16 h-16 bg-black rounded-full flex items-center justify-center mx-auto mb-6 hover-scale">
+                        <span class="text-white text-2xl font-bold">1</span>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Upload Invoices</h3>
+                    <p class="text-gray-600">Drag and drop your Excel or CSV files. We support all major formats with automatic column mapping.</p>
+                </div>
+                
+                <div class="text-center fade-in-up" style="transition-delay: 0.1s;">
+                    <div class="w-16 h-16 bg-black rounded-full flex items-center justify-center mx-auto mb-6 hover-scale">
+                        <span class="text-white text-2xl font-bold">2</span>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">AI Validation</h3>
+                    <p class="text-gray-600">Our AI analyzes each invoice against your property and lease data in real-time, checking for duplicates and vacancy overlaps.</p>
+                </div>
+                
+                <div class="text-center fade-in-up" style="transition-delay: 0.2s;">
+                    <div class="w-16 h-16 bg-black rounded-full flex items-center justify-center mx-auto mb-6 hover-scale">
+                        <span class="text-white text-2xl font-bold">3</span>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Get Results</h3>
+                    <p class="text-gray-600">View validated invoices with clear determinations and actionable insights. Export to CSV or integrate with your workflow.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pricing Section with Stripe -->
+    <div id="pricing" class="bg-gray-50 py-24 border-t border-gray-200">
+        <div class="max-w-7xl mx-auto px-8">
+            <div class="text-center mb-16 fade-in-up">
+                <h2 class="text-4xl lg:text-5xl font-bold mb-4">Simple, transparent pricing</h2>
+                <p class="text-lg text-gray-600">Choose the plan that fits your needs. All plans include a 14-day free trial.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+                <!-- Starter Plan -->
+                <div class="card bg-white p-8 rounded-2xl border-2 border-gray-200 fade-in-up flex flex-col">
+                    <div class="mb-6">
+                        <h3 class="text-2xl font-bold mb-2">Starter</h3>
+                        <div class="flex items-baseline">
+                            <span class="text-4xl font-bold">$29</span>
+                            <span class="text-gray-600 ml-2">/month</span>
+                        </div>
+                        <p class="text-sm text-gray-500 mt-2">Perfect for small teams</p>
+                    </div>
+                    <ul class="space-y-3 mb-8 flex-grow">
+                        <li class="flex items-center gap-2">
+                            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span class="text-gray-600">Up to 500 invoices/month</span>
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span class="text-gray-600">Basic validation</span>
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span class="text-gray-600">Email support</span>
+                        </li>
+                    </ul>
+                    <button class="w-full bg-black text-white py-3 px-4 rounded-lg font-medium hover:bg-gray-900 transition mt-auto">
+                        Start Free Trial
+                    </button>
+                </div>
+
+                <!-- Professional Plan -->
+                <div class="card bg-black text-white p-8 rounded-2xl border-2 border-black fade-in-up relative flex flex-col" style="transition-delay: 0.1s;">
+                    <div class="absolute top-0 right-0 bg-white text-black px-3 py-1 rounded-bl-lg text-xs font-bold">
+                        POPULAR
+                    </div>
+                    <div class="mb-6">
+                        <h3 class="text-2xl font-bold mb-2">Professional</h3>
+                        <div class="flex items-baseline">
+                            <span class="text-4xl font-bold">$99</span>
+                            <span class="text-white/70 ml-2">/month</span>
+                        </div>
+                        <p class="text-sm text-white/70 mt-2">For growing businesses</p>
+                    </div>
+                    <ul class="space-y-3 mb-8 flex-grow">
+                        <li class="flex items-center gap-2">
+                            <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span>Unlimited invoices</span>
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span>Advanced validation</span>
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span>Priority support</span>
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span>API access</span>
+                        </li>
+                    </ul>
+                    <button class="w-full bg-white text-black py-3 px-4 rounded-lg font-medium hover:bg-gray-100 transition mt-auto">
+                        Start Free Trial
+                    </button>
+                </div>
+
+                <!-- Enterprise Plan -->
+                <div class="card bg-white p-8 rounded-2xl border-2 border-gray-200 fade-in-up flex flex-col" style="transition-delay: 0.2s;">
+                    <div class="mb-6">
+                        <h3 class="text-2xl font-bold mb-2">Enterprise</h3>
+                        <div class="flex items-baseline">
+                            <span class="text-4xl font-bold">Custom</span>
+                        </div>
+                        <p class="text-sm text-gray-500 mt-2">For large organizations</p>
+                    </div>
+                    <ul class="space-y-3 mb-8 flex-grow">
+                        <li class="flex items-center gap-2">
+                            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span class="text-gray-600">Everything in Professional</span>
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span class="text-gray-600">Custom integrations</span>
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span class="text-gray-600">Dedicated support</span>
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span class="text-gray-600">SLA guarantee</span>
+                        </li>
+                    </ul>
+                    <button class="w-full border-2 border-black text-black py-3 px-4 rounded-lg font-medium hover:bg-black hover:text-white transition mt-auto">
+                        Contact Sales
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stripe Payment Section -->
+            <div class="mt-16 text-center fade-in-up">
+                <div class="bg-white rounded-2xl p-8 border-2 border-gray-200 max-w-2xl mx-auto">
+                    <div class="flex items-center justify-center gap-3 mb-4">
+                        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                        </svg>
+                        <h3 class="text-2xl font-bold">Secure payments powered by Stripe</h3>
+                    </div>
+                    <p class="text-gray-600 mb-6">All payments are processed securely through Stripe. We never store your payment information.</p>
+                    <div class="flex items-center justify-center gap-4">
+                        <img src="https://stripe.com/img/v3/home/social.png" alt="Stripe" class="h-8 opacity-60">
+                        <span class="text-sm text-gray-500">PCI DSS Level 1 Compliant</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CTA Section -->
+    <div class="max-w-5xl mx-auto px-8 py-24 text-center">
+        <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-3xl p-12 lg:p-16 border border-gray-200 fade-in-up">
+            <h2 class="text-4xl lg:text-5xl font-bold mb-4">Ready to sync your invoices?</h2>
+            <p class="text-lg lg:text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+                Join finance teams using Valix to process invoices 10x faster with complete accuracy.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="/login" class="btn-primary bg-black text-white hover:bg-gray-900 h-14 px-8 rounded-full text-base font-medium flex items-center justify-center mx-auto sm:mx-0">
+                    Get Started Free
+                    <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                    </svg>
+                </a>
+                <button class="border-2 border-gray-300 text-black hover:border-black hover:bg-gray-50 h-14 px-8 rounded-full text-base bg-transparent transition font-medium">
+                    Schedule Demo
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="bg-gray-50 border-t border-gray-200 py-12">
+        <div class="max-w-7xl mx-auto px-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+                <div>
+                    <div class="logo-container mb-4">
+                        <div class="logo-icon">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            </svg>
+                        </div>
+                        <span class="font-bold text-lg gradient-text">Valix</span>
+                    </div>
+                    <p class="text-sm text-gray-600">AI-powered invoice validation for modern finance teams.</p>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Product</h4>
+                    <ul class="space-y-2 text-sm text-gray-600">
+                        <li><a href="#features" class="hover:text-black transition">Features</a></li>
+                        <li><a href="#pricing" class="hover:text-black transition">Pricing</a></li>
+                        <li><a href="#" class="hover:text-black transition">Security</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Company</h4>
+                    <ul class="space-y-2 text-sm text-gray-600">
+                        <li><a href="#" class="hover:text-black transition">About</a></li>
+                        <li><a href="#" class="hover:text-black transition">Blog</a></li>
+                        <li><a href="#" class="hover:text-black transition">Careers</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Support</h4>
+                    <ul class="space-y-2 text-sm text-gray-600">
+                        <li><a href="/docs" class="hover:text-black transition">Documentation</a></li>
+                        <li><a href="#" class="hover:text-black transition">Contact</a></li>
+                        <li><a href="#" class="hover:text-black transition">Help Center</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-200 pt-8 text-center text-sm text-gray-600">
+                <p>&copy; 2025 Valix. All rights reserved.</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/scroll-animations.js"></script>
+</body>
+</html>

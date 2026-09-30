@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoices - Valix</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        
+        /* Toast Notification Styles */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .toast {
+            min-width: 320px;
+            max-width: 420px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 16px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            animation: slideInRight 0.3s ease-out;
+            border-left: 4px solid;
+        }
+        
+        .toast.success {
+            border-left-color: #10b981;
+        }
+        
+        .toast.error {
+            border-left-color: #ef4444;
+        }
+        
+        .toast.warning {
+            border-left-color: #f59e0b;
+        }
+        
+        .toast.info {
+            border-left-color: #3b82f6;
+        }
+        
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideOutRight {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+        
+        .toast.hiding {
+            animation: slideOutRight 0.3s ease-out forwards;
+        }
+        
+        .toast-icon {
+            flex-shrink: 0;
+            width: 20px;
+            height: 20px;
+            margin-top: 2px;
+        }
+        
+        .toast-content {
+            flex: 1;
+        }
+        
+        .toast-title {
+            font-weight: 600;
+            font-size: 14px;
+            color: #111827;
+            margin-bottom: 4px;
+        }
+        
+        .toast-message {
+            font-size: 13px;
+            color: #6b7280;
+            line-height: 1.5;
+        }
+        
+        .toast-close {
+            flex-shrink: 0;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            color: #9ca3af;
+            transition: color 0.2s;
+        }
+        
+        .toast-close:hover {
+            color: #111827;
+        }
+        
+        /* Modal Dialog Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 10001;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.2s ease-out;
+        }
+        
+        .modal {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            max-width: 480px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: scaleIn 0.2s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes scaleIn {
+            from {
+                transform: scale(0.95);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        
+        .modal-header {
+            padding: 24px 24px 0;
+        }
+        
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 8px;
+        }
+        
+        .modal-body {
+            padding: 16px 24px;
+        }
+        
+        .modal-message {
+            font-size: 14px;
+            color: #6b7280;
+            line-height: 1.6;
+        }
+        
+        .modal-footer {
+            padding: 16px 24px 24px;
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+        
+        .btn-primary {
+            background: #111827;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #1f2937;
+        }
+        
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+        }
+        
+        .btn-secondary:hover {
+            background: #e5e7eb;
+        }
+        
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 flex h-screen">
+    <!-- Toast Container -->
+    <div id="toastContainer" class="toast-container"></div>
+    
+    <!-- Modal Container -->
+    <div id="modalContainer"></div>
+    <!-- Sidebar -->
+    <aside class="w-64 bg-white border-r border-gray-200 flex flex-col">
+        <div class="p-6 border-b border-gray-200">
+            <div class="flex items-center gap-2">
+                <img src="/static/images/valix-logo.svg" alt="Valix" class="h-8" />
+            </div>
+        </div>
+        <nav class="flex-1 p-4">
+            <a href="/dashboard" class="flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg mb-1">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path>
+                </svg>
+                <span>Dashboard</span>
+            </a>
+            <a href="/upload" class="flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg mb-1">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                </svg>
+                <span>Upload Invoices</span>
+            </a>
+            <a href="/invoices" class="flex items-center gap-3 px-3 py-2 bg-gray-100 text-black rounded-lg mb-1 font-medium">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                <span>Invoices</span>
+            </a>
+            <a href="/import-units" class="flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg mb-1">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                </svg>
+                <span>Import Units</span>
+            </a>
+            <a href="/import-leases" class="flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg mb-1">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                <span>Import Leases</span>
+            </a>
+            <a href="/data-management" class="flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg mb-1">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"></path>
+                </svg>
+                <span>Data Management</span>
+            </a>
+            <a href="/settings" class="flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+                <span>Settings</span>
+            </a>
+        </nav>
+        <!-- Account Section -->
+        <div class="p-4 border-t border-gray-200">
+            <div class="flex items-center gap-3 px-3 py-2">
+                <div class="w-8 h-8 bg-black rounded-full flex items-center justify-center">
+                    <span class="text-white text-sm font-medium">{{ (user.full_name or user.email)[0].upper() }}</span>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-gray-900 truncate">{{ user.full_name or user.email }}</p>
+                    <p class="text-xs text-gray-500 truncate">{{ user.email }}</p>
+                </div>
+            </div>
+            <a href="/logout" class="flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg mt-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                </svg>
+                <span>Sign Out</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 overflow-auto">
+        <header class="bg-white border-b border-gray-200 sticky top-0 z-10">
+            <div class="px-8 py-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">Invoices</h1>
+                        <p class="text-sm text-gray-600 mt-1">View and manage all invoices</p>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <a href="/upload" class="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-900 transition-colors font-medium">
+                            Upload New
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="p-8">
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div class="bg-white p-4 rounded-lg border border-gray-200">
+                    <p class="text-sm text-gray-600 font-medium">Total Invoices</p>
+                    <p class="text-2xl font-bold text-gray-900 mt-1">{{ "{:,}".format(stats.total) }}</p>
+                </div>
+                <div class="bg-white p-4 rounded-lg border border-gray-200">
+                    <p class="text-sm text-gray-600 font-medium">Validated</p>
+                    <p class="text-2xl font-bold text-gray-900 mt-1">{{ "{:,}".format(stats.validated) }}</p>
+                </div>
+                <div class="bg-white p-4 rounded-lg border border-gray-200">
+                    <p class="text-sm text-gray-600 font-medium">Pending</p>
+                    <p class="text-2xl font-bold text-gray-900 mt-1">{{ "{:,}".format(stats.total - stats.validated) }}</p>
+                </div>
+            </div>
+
+            <!-- Search and Filters -->
+            <div class="bg-white p-4 rounded-lg border border-gray-200 mb-6">
+                <!-- Search Bar -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Search</label>
+                    <input 
+                        type="text" 
+                        id="search-input"
+                        value="{{ filters.search or '' }}"
+                        placeholder="Search by invoice number, supplier, or unit ID..." 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        onkeyup="handleSearch(event)"
+                    >
+                </div>
+                
+                <form method="GET" action="/invoices" id="filter-form" class="flex items-end gap-4 flex-wrap">
+                    <div class="flex-1 min-w-[200px]">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                        <select name="status" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">All Statuses</option>
+                            <option value="Valid" {% if filters.status == 'Valid' %}selected{% endif %}>Valid</option>
+                            <option value="Invalid" {% if filters.status == 'Invalid' %}selected{% endif %}>Invalid</option>
+                            <option value="Needs Review" {% if filters.status == 'Needs Review' %}selected{% endif %}>Needs Review</option>
+                        </select>
+                    </div>
+                    <div class="flex-1 min-w-[200px]">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Determination</label>
+                        <select name="determination" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">All Determinations</option>
+                            {% for det in determination_list %}
+                            <option value="{{ det }}" {% if filters.determination == det %}selected{% endif %}>{{ det }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="flex-1 min-w-[200px]">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Batch</label>
+                        <select name="batch" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">All Batches</option>
+                            {% for batch in batch_list %}
+                            <option value="{{ batch }}" {% if filters.batch == batch %}selected{% endif %}>{{ batch }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="flex gap-2">
+                        <button type="submit" class="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-900 transition-colors font-medium">
+                            Filter
+                        </button>
+                        <a href="/invoices" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium">
+                            Clear
+                        </a>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="mb-4 flex justify-between items-center">
+                <div>
+                    <button 
+                        id="bulkDeleteBtn" 
+                        onclick="bulkDeleteInvoices()" 
+                        class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
+                        disabled
+                    >
+                        Delete Selected (<span id="selectedCount">0</span>)
+                    </button>
+                </div>
+                <div>
+                    <button onclick="exportToCSV()" class="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-900 transition-colors font-medium">
+                        Export to CSV
+                    </button>
+                </div>
+            </div>
+
+            <!-- Invoices Table -->
+            <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead class="bg-gray-50 border-b border-gray-200">
+                            <tr>
+                                <th class="px-6 py-3 text-left">
+                                    <input 
+                                        type="checkbox" 
+                                        id="selectAll" 
+                                        onchange="toggleSelectAll(this)"
+                                        class="w-4 h-4 text-black border-gray-300 rounded focus:ring-black"
+                                    >
+                                </th>
+                                <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Invoice</th>
+                                <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Account</th>
+                                <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Supplier</th>
+                                <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Unit ID</th>
+                                <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Address</th>
+                                <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Period</th>
+                                <th class="px-6 py-3 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider">Amount</th>
+                                <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Determination</th>
+                                <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            {% if invoices %}
+                                {% for item in invoices %}
+                                <tr class="hover:bg-gray-50 transition-colors">
+                                    <td class="px-6 py-3">
+                                        <input 
+                                            type="checkbox" 
+                                            class="invoice-checkbox w-4 h-4 text-black border-gray-300 rounded focus:ring-black"
+                                            value="{{ item.invoice.id }}"
+                                            onchange="updateBulkDeleteButton()"
+                                        >
+                                    </td>
+                                    <td class="px-6 py-3 text-gray-900 font-semibold">{{ item.invoice.invoice_number }}</td>
+                                    <td class="px-6 py-3 text-gray-900 font-semibold font-mono">{{ item.invoice.supplier_account_number or 'N/A' }}</td>
+                                    <td class="px-6 py-3 text-gray-900 font-semibold">{{ item.invoice.supplier_name }}</td>
+                                    <td class="px-6 py-3 text-gray-900 font-semibold">{{ item.invoice.unit_id }}</td>
+                                    <td class="px-6 py-3 text-gray-900 font-semibold text-xs">{{ item.invoice.address or 'N/A' }}</td>
+                                    <td class="px-6 py-3 text-gray-900 font-semibold">{{ item.invoice.billing_period_start|ddmmyyyy }} to {{ item.invoice.billing_period_end|ddmmyyyy }}</td>
+                                    <td class="px-6 py-3 text-right text-gray-900 font-semibold">£{{ "%.2f"|format(item.invoice.gross_amount) }}</td>
+                                    <td class="px-6 py-3">
+                                        {% if item.validation %}
+                                            {% if item.validation.validation_status == 'Valid' %}
+                                                <span class="px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-700">Valid</span>
+                                            {% elif item.validation.validation_status == 'Invalid' %}
+                                                <span class="px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-700">Invalid</span>
+                                            {% else %}
+                                                <span class="px-2 py-1 rounded text-xs font-medium bg-yellow-100 text-yellow-700">Review</span>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-700">Pending</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-6 py-3">
+                                        {% if item.validation %}
+                                            <span class="text-sm font-semibold {% if 'OK TO PAY' in item.validation.determination %}text-green-600{% elif 'DO NOT PAY' in item.validation.determination %}text-red-600{% elif 'COT' in item.validation.determination %}text-yellow-600{% else %}text-gray-600{% endif %}">
+                                                {{ item.validation.determination }}
+                                            </span>
+                                        {% else %}
+                                            <span class="text-gray-400">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-6 py-3">
+                                        <div class="flex items-center gap-3">
+                                            <a href="/invoice/{{ item.invoice.id }}" class="text-gray-700 hover:text-gray-900">View</a>
+                                            <button 
+                                                class="delete-invoice-btn text-red-600 hover:text-red-800 transition"
+                                                data-invoice-id="{{ item.invoice.id }}"
+                                                data-invoice-number="{{ item.invoice.invoice_number }}"
+                                                title="Delete invoice"
+                                            >
+                                                Delete
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="11" class="px-6 py-8 text-center text-gray-500">
+                                        No invoices found. <a href="/upload" class="text-black hover:text-gray-600 font-medium">Upload your first invoice</a>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                {% if pagination.total_pages > 1 %}
+                <div class="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+                    <div class="text-sm text-gray-600">
+                        Showing {{ ((pagination.page - 1) * pagination.per_page) + 1 }} to {{ [pagination.page * pagination.per_page, pagination.total]|min }} of {{ pagination.total }} invoices
+                    </div>
+                    <div class="flex items-center gap-2">
+                        {% if pagination.has_prev %}
+                        <a href="?page={{ pagination.page - 1 }}{% if filters.status %}&status={{ filters.status }}{% endif %}{% if filters.determination %}&determination={{ filters.determination }}{% endif %}{% if filters.batch %}&batch={{ filters.batch }}{% endif %}{% if filters.search %}&q={{ filters.search }}{% endif %}" 
+                           class="px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50">
+                            Previous
+                        </a>
+                        {% else %}
+                        <span class="px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-400 cursor-not-allowed">Previous</span>
+                        {% endif %}
+                        
+                        <span class="px-3 py-2 text-sm text-gray-700">
+                            Page {{ pagination.page }} of {{ pagination.total_pages }}
+                        </span>
+                        
+                        {% if pagination.has_next %}
+                        <a href="?page={{ pagination.page + 1 }}{% if filters.status %}&status={{ filters.status }}{% endif %}{% if filters.determination %}&determination={{ filters.determination }}{% endif %}{% if filters.batch %}&batch={{ filters.batch }}{% endif %}{% if filters.search %}&q={{ filters.search }}{% endif %}" 
+                           class="px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50">
+                            Next
+                        </a>
+                        {% else %}
+                        <span class="px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-400 cursor-not-allowed">Next</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let searchTimeout;
+        
+        // Toast Notification System
+        function showToast(type, title, message, duration = 5000) {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+            
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            const icons = {
+                success: '<svg class="toast-icon text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>',
+                error: '<svg class="toast-icon text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>',
+                warning: '<svg class="toast-icon text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>',
+                info: '<svg class="toast-icon text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>'
+            };
+            
+            toast.innerHTML = `
+                ${icons[type] || icons.info}
+                <div class="toast-content">
+                    <div class="toast-title">${title}</div>
+                    <div class="toast-message">${message}</div>
+                </div>
+                <svg class="toast-close" fill="none" stroke="currentColor" viewBox="0 0 24 24" onclick="this.closest('.toast').remove()">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            `;
+            
+            container.appendChild(toast);
+            
+            // Auto-remove after duration
+            if (duration > 0) {
+                setTimeout(() => {
+                    toast.classList.add('hiding');
+                    setTimeout(() => toast.remove(), 300);
+                }, duration);
+            }
+        }
+        
+        // Modal Dialog System
+        function showModal(title, message, options = {}) {
+            return new Promise((resolve) => {
+                const container = document.getElementById('modalContainer');
+                if (!container) {
+                    resolve(options.defaultValue || false);
+                    return;
+                }
+                
+                const overlay = document.createElement('div');
+                overlay.className = 'modal-overlay';
+                
+                const modal = document.createElement('div');
+                modal.className = 'modal';
+                
+                const confirmText = options.confirmText || 'Confirm';
+                const cancelText = options.cancelText || 'Cancel';
+                const confirmClass = options.danger ? 'btn-danger' : 'btn-primary';
+                
+                modal.innerHTML = `
+                    <div class="modal-header">
+                        <div class="modal-title">${title}</div>
+                    </div>
+                    <div class="modal-body">
+                        <div class="modal-message">${message}</div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" data-action="cancel">${cancelText}</button>
+                        <button class="btn ${confirmClass}" data-action="confirm">${confirmText}</button>
+                    </div>
+                `;
+                
+                overlay.appendChild(modal);
+                container.appendChild(overlay);
+                
+                const handleClick = (e) => {
+                    const action = e.target.closest('[data-action]')?.getAttribute('data-action');
+                    if (action === 'confirm') {
+                        overlay.remove();
+                        resolve(true);
+                    } else if (action === 'cancel' || e.target === overlay) {
+                        overlay.remove();
+                        resolve(false);
+                    }
+                };
+                
+                overlay.addEventListener('click', handleClick);
+                
+                // Close on Escape key
+                const handleEscape = (e) => {
+                    if (e.key === 'Escape') {
+                        overlay.remove();
+                        document.removeEventListener('keydown', handleEscape);
+                        resolve(false);
+                    }
+                };
+                document.addEventListener('keydown', handleEscape);
+            });
+        }
+        
+        function handleSearch(event) {
+            // Debounce search - wait 500ms after user stops typing
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                const searchTerm = event.target.value.trim();
+                const params = new URLSearchParams(window.location.search);
+                
+                if (searchTerm) {
+                    params.set('q', searchTerm);
+                } else {
+                    params.delete('q');
+                }
+                
+                // Reload page with search parameter
+                window.location.search = params.toString();
+            }, 500);
+        }
+        
+        function exportToCSV() {
+            // Get current filters
+            const params = new URLSearchParams(window.location.search);
+            
+            // Build export URL
+            const exportUrl = '/api/export/invoices?' + params.toString();
+            
+            // Trigger download
+            window.location.href = exportUrl;
+        }
+        
+        // Set up delete button event listeners on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.delete-invoice-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const invoiceId = this.getAttribute('data-invoice-id');
+                    const invoiceNumber = this.getAttribute('data-invoice-number');
+                    deleteInvoice(invoiceId, invoiceNumber, this);
+                });
+            });
+            updateBulkDeleteButton();
+        });
+        
+        function toggleSelectAll(checkbox) {
+            const checkboxes = document.querySelectorAll('.invoice-checkbox');
+            checkboxes.forEach(cb => cb.checked = checkbox.checked);
+            updateBulkDeleteButton();
+        }
+        
+        function updateBulkDeleteButton() {
+            const checkboxes = document.querySelectorAll('.invoice-checkbox:checked');
+            const count = checkboxes.length;
+            const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+            const selectedCount = document.getElementById('selectedCount');
+            
+            if (selectedCount) {
+                selectedCount.textContent = count;
+            }
+            if (bulkDeleteBtn) {
+                bulkDeleteBtn.disabled = count === 0;
+            }
+        }
+        
+        async function bulkDeleteInvoices() {
+            const checkboxes = document.querySelectorAll('.invoice-checkbox:checked');
+            const invoiceIds = Array.from(checkboxes).map(cb => parseInt(cb.value));
+            
+            if (invoiceIds.length === 0) {
+                showToast('warning', 'No Selection', 'Please select at least one invoice to delete.');
+                return;
+            }
+            
+            const confirmed = await showModal(
+                'Delete Multiple Invoices',
+                `You are about to delete <strong>${invoiceIds.length}</strong> invoice${invoiceIds.length > 1 ? 's' : ''}. This action cannot be undone and will permanently remove the invoices and their validation data.<br><br>Are you sure you want to continue?`,
+                {
+                    confirmText: 'Delete',
+                    cancelText: 'Cancel',
+                    danger: true
+                }
+            );
+            
+            if (!confirmed) {
+                return;
+            }
+            
+            const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+            const originalText = bulkDeleteBtn.textContent;
+            bulkDeleteBtn.disabled = true;
+            bulkDeleteBtn.textContent = 'Deleting...';
+            
+            fetch('/api/invoices/bulk', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(invoiceIds)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.detail || 'Failed to delete invoices');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    const message = data.deleted_count === 1 
+                        ? 'Invoice deleted successfully'
+                        : `${data.deleted_count} invoices deleted successfully`;
+                    showToast('success', 'Success', message, 3000);
+                    setTimeout(() => window.location.reload(), 1500);
+                } else {
+                    showToast('error', 'Deletion Failed', data.detail || data.message || 'Failed to delete invoices');
+                    bulkDeleteBtn.disabled = false;
+                    bulkDeleteBtn.textContent = originalText;
+                }
+            })
+            .catch(error => {
+                console.error('Error deleting invoices:', error);
+                showToast('error', 'Error', error.message || 'An unexpected error occurred. Please try again.');
+                bulkDeleteBtn.disabled = false;
+                bulkDeleteBtn.textContent = originalText;
+            });
+        }
+        
+        async function deleteInvoice(invoiceId, invoiceNumber, buttonElement) {
+            // Confirm deletion
+            const confirmed = await showModal(
+                'Delete Invoice',
+                `You are about to delete invoice <strong>${invoiceNumber}</strong>. This action cannot be undone and will permanently remove the invoice and its validation data.<br><br>Are you sure you want to continue?`,
+                {
+                    confirmText: 'Delete',
+                    cancelText: 'Cancel',
+                    danger: true
+                }
+            );
+            
+            if (!confirmed) {
+                return;
+            }
+            
+            // Show loading state
+            const originalText = buttonElement.textContent;
+            buttonElement.disabled = true;
+            buttonElement.textContent = 'Deleting...';
+            
+            // Delete invoice via API
+            fetch('/api/invoices/' + invoiceId, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.detail || 'Failed to delete invoice');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    showToast('success', 'Invoice Deleted', `Invoice "${invoiceNumber}" has been deleted successfully.`, 3000);
+                    setTimeout(() => window.location.reload(), 1500);
+                } else {
+                    showToast('error', 'Deletion Failed', data.detail || data.message || 'Failed to delete invoice');
+                    buttonElement.disabled = false;
+                    buttonElement.textContent = originalText;
+                }
+            })
+            .catch(error => {
+                console.error('Error deleting invoice:', error);
+                showToast('error', 'Error', error.message || 'An unexpected error occurred. Please try again.');
+                buttonElement.disabled = false;
+                buttonElement.textContent = originalText;
+            });
+        }
+    </script>
+</body>
+</html>

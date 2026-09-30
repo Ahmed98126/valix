@@ -1,0 +1,71 @@
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# ── Virtual environments ───────────────────────────────────────────────────────
+venv/
+venv_new/
+env/
+ENV/
+.venv/
+
+# ── Environment / secrets ─────────────────────────────────────────────────────
+# All .env files contain real credentials and must never be committed.
+# Use .env.example (committed, no real values) as the template.
+.env
+.env.*
+!.env.example
+
+# ── Databases ─────────────────────────────────────────────────────────────────
+# app.db is a stale local SQLite snapshot — the live database is Supabase.
+# Keep the file on disk; never commit it.
+*.db
+*.sqlite
+*.sqlite3
+app.db
+
+# ── User uploads (real client files) ─────────────────────────────────────────
+uploads/
+
+# ── Real PDF invoices (root-level test copies) ────────────────────────────────
+*.pdf
+
+# ── Real client Excel workbooks ───────────────────────────────────────────────
+# Committed .xlsx/.xls templates/samples are fine; exclude only temp lock-files
+# and any client workbooks that land at the root during ad-hoc testing.
+~$*.xlsx
+~$*.xls
+
+# ── Test PDFs directory — exclude the actual PDFs, keep metadata files ────────
+test_pdfs/*.pdf
+
+# ── Logs ──────────────────────────────────────────────────────────────────────
+*.log
+logs/
+
+# ── Coverage / test artefacts ─────────────────────────────────────────────────
+.coverage
+coverage.xml
+htmlcov/
+.pytest_cache/
+
+# ── Temporary / editor artefacts ──────────────────────────────────────────────
+*.tmp
+*.bak
+*.swp
+*.swo
+*~
+
+# ── IDE ───────────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+
+# ── OS ────────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db

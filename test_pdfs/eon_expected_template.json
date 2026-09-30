@@ -1,0 +1,14 @@
+{
+  "invoice_number": "EL12345678",
+  "supplier_name": "E.ON Energy",
+  "supplier_account_number": "0123456789",
+  "address": "86 Edlestone Road, Crewe, CW2 7HD",
+  "billing_period_start": "2025-12-01",
+  "billing_period_end": "2025-12-31",
+  "invoice_date": "2025-12-30",
+  "gross_amount": 125.75,
+  "net_amount": 119.76,
+  "vat_amount": 5.99,
+  "utility_type": "Electricity",
+  "currency": "GBP"
+}

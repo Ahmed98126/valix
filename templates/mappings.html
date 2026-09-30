@@ -1,0 +1,342 @@
+{% extends "base.html" %}
+
+{% block title %}Account Mappings{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Breadcrumbs -->
+    {% with breadcrumbs = [
+        {'title': 'Account Mappings'}
+    ] %}
+    {% include "components/breadcrumbs.html" %}
+    {% endwith %}
+    
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Account Mappings</h1>
+        <div class="flex space-x-2">
+            <a href="/mappings/template" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded">
+                <i class="fas fa-download mr-2"></i> Download Template
+            </a>
+            <button id="importBtn" class="bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded">
+                <i class="fas fa-upload mr-2"></i> Import Mappings
+            </button>
+            <a href="/mappings/export" class="bg-purple-500 hover:bg-purple-600 text-white py-2 px-4 rounded">
+                <i class="fas fa-file-export mr-2"></i> Export Mappings
+            </a>
+            <button id="createBtn" class="bg-indigo-500 hover:bg-indigo-600 text-white py-2 px-4 rounded">
+                <i class="fas fa-plus mr-2"></i> Create Mapping
+            </button>
+        </div>
+    </div>
+
+    <!-- Alert Messages -->
+    {% if message %}
+    <div class="bg-{{ message_type }}-100 border-l-4 border-{{ message_type }}-500 text-{{ message_type }}-700 p-4 mb-6" role="alert">
+        <p>{{ message }}</p>
+    </div>
+    {% endif %}
+
+    <!-- Search and Filter -->
+    <div class="bg-white shadow rounded-lg p-4 mb-6">
+        <div class="flex flex-wrap items-center space-x-4">
+            <div class="flex-grow">
+                <label for="search" class="block text-sm font-medium text-gray-700 mb-1">Search</label>
+                <input type="text" id="search" class="border rounded w-full py-2 px-3" placeholder="Search by account number, unit ID, or supplier...">
+            </div>
+            <div class="w-48">
+                <label for="supplier-filter" class="block text-sm font-medium text-gray-700 mb-1">Supplier</label>
+                <select id="supplier-filter" class="border rounded w-full py-2 px-3">
+                    <option value="">All Suppliers</option>
+                    {% for supplier in suppliers %}
+                    <option value="{{ supplier }}">{{ supplier }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="w-48 mt-6">
+                <button id="filterBtn" class="bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded w-full">
+                    Apply Filters
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mappings Table -->
+    <div class="bg-white shadow rounded-lg overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Supplier
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Account Number
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Unit ID
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Notes
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                    </th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% if mappings %}
+                    {% for mapping in mappings %}
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {{ mapping.supplier_name or "N/A" }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {{ mapping.supplier_account_number }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {{ mapping.unit_id }}
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-900">
+                            {{ mapping.notes or "" }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <button class="edit-btn text-indigo-600 hover:text-indigo-900 mr-3" data-id="{{ mapping.id }}">
+                                Edit
+                            </button>
+                            <button class="delete-btn text-red-600 hover:text-red-900" data-id="{{ mapping.id }}">
+                                Delete
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">
+                            No account mappings found. Create your first mapping or import from Excel.
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if total_pages > 1 %}
+    <div class="flex justify-between items-center mt-4">
+        <div class="text-sm text-gray-700">
+            Showing <span class="font-medium">{{ (page - 1) * per_page + 1 }}</span> to 
+            <span class="font-medium">{{ min((page * per_page), total_items) }}</span> of 
+            <span class="font-medium">{{ total_items }}</span> results
+        </div>
+        <div class="flex space-x-2">
+            {% if page > 1 %}
+            <a href="?page={{ page - 1 }}" class="bg-white border border-gray-300 text-gray-500 hover:bg-gray-50 px-4 py-2 text-sm font-medium rounded">
+                Previous
+            </a>
+            {% endif %}
+            {% if page < total_pages %}
+            <a href="?page={{ page + 1 }}" class="bg-white border border-gray-300 text-gray-500 hover:bg-gray-50 px-4 py-2 text-sm font-medium rounded">
+                Next
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Create/Edit Modal -->
+    <div id="mappingModal" class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center hidden z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
+            <div class="px-6 py-4 border-b">
+                <h3 id="modalTitle" class="text-lg font-medium text-gray-900">Create Account Mapping</h3>
+            </div>
+            <form id="mappingForm" method="post" action="/mappings/create">
+                <div class="px-6 py-4">
+                    <input type="hidden" id="mapping_id" name="mapping_id">
+                    
+                    <div class="mb-4">
+                        <label for="supplier_name" class="block text-sm font-medium text-gray-700 mb-1">Supplier Name</label>
+                        <input type="text" id="supplier_name" name="supplier_name" class="border rounded w-full py-2 px-3" required>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="supplier_account_number" class="block text-sm font-medium text-gray-700 mb-1">Account Number</label>
+                        <input type="text" id="supplier_account_number" name="supplier_account_number" class="border rounded w-full py-2 px-3" required>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="unit_id" class="block text-sm font-medium text-gray-700 mb-1">Unit ID</label>
+                        <select id="unit_id" name="unit_id" class="border rounded w-full py-2 px-3" required>
+                            <option value="">Select Unit</option>
+                            {% for unit in units %}
+                            <option value="{{ unit.unit_id }}">{{ unit.unit_id }} - {{ unit.building_name or "" }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="notes" class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                        <textarea id="notes" name="notes" class="border rounded w-full py-2 px-3" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="px-6 py-3 bg-gray-50 flex justify-end space-x-2 rounded-b-lg">
+                    <button type="button" id="cancelBtn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 px-4 rounded">
+                        Cancel
+                    </button>
+                    <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded">
+                        Save
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Import Modal -->
+    <div id="importModal" class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center hidden z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
+            <div class="px-6 py-4 border-b">
+                <h3 class="text-lg font-medium text-gray-900">Import Account Mappings</h3>
+            </div>
+            <form id="importForm" method="post" action="/mappings/import" enctype="multipart/form-data">
+                <div class="px-6 py-4">
+                    <div class="mb-4">
+                        <label for="file" class="block text-sm font-medium text-gray-700 mb-1">Excel File</label>
+                        <input type="file" id="file" name="file" class="border rounded w-full py-2 px-3" accept=".xlsx,.xls" required>
+                    </div>
+                    <p class="text-sm text-gray-500">
+                        Please upload an Excel file with the following columns: Supplier Name, Account Number, Unit ID, Notes (optional).
+                        <a href="/mappings/template" class="text-blue-500 hover:underline">Download template</a>.
+                    </p>
+                </div>
+                <div class="px-6 py-3 bg-gray-50 flex justify-end space-x-2 rounded-b-lg">
+                    <button type="button" id="cancelImportBtn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 px-4 rounded">
+                        Cancel
+                    </button>
+                    <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded">
+                        Import
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center hidden z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
+            <div class="px-6 py-4 border-b">
+                <h3 class="text-lg font-medium text-gray-900">Confirm Deletion</h3>
+            </div>
+            <div class="px-6 py-4">
+                <p>Are you sure you want to delete this account mapping? This action cannot be undone.</p>
+            </div>
+            <div class="px-6 py-3 bg-gray-50 flex justify-end space-x-2 rounded-b-lg">
+                <button type="button" id="cancelDeleteBtn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 px-4 rounded">
+                    Cancel
+                </button>
+                <form id="deleteForm" method="post" action="/mappings/delete">
+                    <input type="hidden" id="delete_mapping_id" name="mapping_id">
+                    <button type="submit" class="bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded">
+                        Delete
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Create mapping modal
+        const mappingModal = document.getElementById('mappingModal');
+        const createBtn = document.getElementById('createBtn');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const modalTitle = document.getElementById('modalTitle');
+        const mappingForm = document.getElementById('mappingForm');
+        
+        // Import modal
+        const importModal = document.getElementById('importModal');
+        const importBtn = document.getElementById('importBtn');
+        const cancelImportBtn = document.getElementById('cancelImportBtn');
+        
+        // Delete modal
+        const deleteModal = document.getElementById('deleteModal');
+        const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
+        const deleteForm = document.getElementById('deleteForm');
+        const deleteIdInput = document.getElementById('delete_mapping_id');
+        
+        // Create/Edit mapping
+        createBtn.addEventListener('click', function() {
+            modalTitle.textContent = 'Create Account Mapping';
+            mappingForm.action = '/mappings/create';
+            document.getElementById('mapping_id').value = '';
+            document.getElementById('supplier_name').value = '';
+            document.getElementById('supplier_account_number').value = '';
+            document.getElementById('unit_id').value = '';
+            document.getElementById('notes').value = '';
+            mappingModal.classList.remove('hidden');
+        });
+        
+        // Edit mapping
+        document.querySelectorAll('.edit-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const id = this.getAttribute('data-id');
+                modalTitle.textContent = 'Edit Account Mapping';
+                mappingForm.action = '/mappings/update';
+                
+                // Fetch mapping data
+                fetch(`/api/mappings/${id}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        document.getElementById('mapping_id').value = data.id;
+                        document.getElementById('supplier_name').value = data.supplier_name || '';
+                        document.getElementById('supplier_account_number').value = data.supplier_account_number;
+                        document.getElementById('unit_id').value = data.unit_id;
+                        document.getElementById('notes').value = data.notes || '';
+                        mappingModal.classList.remove('hidden');
+                    });
+            });
+        });
+        
+        // Delete mapping
+        document.querySelectorAll('.delete-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const id = this.getAttribute('data-id');
+                deleteIdInput.value = id;
+                deleteModal.classList.remove('hidden');
+            });
+        });
+        
+        // Import mappings
+        importBtn.addEventListener('click', function() {
+            importModal.classList.remove('hidden');
+        });
+        
+        // Close modals
+        cancelBtn.addEventListener('click', function() {
+            mappingModal.classList.add('hidden');
+        });
+        
+        cancelImportBtn.addEventListener('click', function() {
+            importModal.classList.add('hidden');
+        });
+        
+        cancelDeleteBtn.addEventListener('click', function() {
+            deleteModal.classList.add('hidden');
+        });
+        
+        // Search functionality
+        const searchInput = document.getElementById('search');
+        const supplierFilter = document.getElementById('supplier-filter');
+        const filterBtn = document.getElementById('filterBtn');
+        
+        filterBtn.addEventListener('click', function() {
+            const searchTerm = searchInput.value.trim();
+            const supplier = supplierFilter.value;
+            
+            let url = window.location.pathname + '?';
+            if (searchTerm) url += `search=${encodeURIComponent(searchTerm)}&`;
+            if (supplier) url += `supplier=${encodeURIComponent(supplier)}&`;
+            
+            window.location.href = url.slice(0, -1); // Remove trailing & or ?
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,2 @@
+unit_id,tenant_name,lease_start,lease_end
+UNIT001,Test Tenant,2013-01-01,2013-12-31

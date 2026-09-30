@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Account - Valix</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body { 
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+        
+        /* Ensure all interactive elements are always visible */
+        button, a, input, select, textarea {
+            min-height: 44px; /* Minimum touch target size */
+        }
+        
+        /* Prevent content from being cut off */
+        .form-container {
+            width: 100%;
+            max-width: 100%;
+        }
+        
+        /* Ensure buttons are always accessible and visible */
+        button[type="submit"] {
+            position: relative;
+            z-index: 10;
+            margin-top: 0.5rem;
+        }
+        
+        /* Ensure form is scrollable and button always visible */
+        form {
+            padding-bottom: 2rem;
+            min-height: auto;
+        }
+        
+        /* Make sure body and panels are properly sized */
+        body {
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        /* Ensure right panel scrolls properly */
+        .right-panel-scroll {
+            height: 100vh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Form container should be scrollable */
+        .right-panel-scroll > div {
+            display: flex;
+            flex-direction: column;
+            min-height: 100%;
+        }
+        
+        /* Fix for laptop screens - reduce ALL spacing aggressively */
+        @media (max-height: 900px) {
+            .logo-section {
+                margin-bottom: 0.25rem !important;
+            }
+            
+            .tabs-section {
+                margin-bottom: 0.25rem !important;
+            }
+            
+            form {
+                padding-bottom: 0.25rem;
+            }
+            
+            form {
+                padding-bottom: 0.5rem;
+            }
+            
+            form.space-y-1\.5 > * + *,
+            .space-y-1\.5 > * + * {
+                margin-top: 0.375rem !important;
+            }
+            
+            input, select {
+                padding-top: 0.375rem !important;
+                padding-bottom: 0.375rem !important;
+                font-size: 0.875rem !important;
+            }
+            
+            button[type="submit"] {
+                margin-top: 0.5rem !important;
+                padding-top: 0.5rem !important;
+                padding-bottom: 0.5rem !important;
+            }
+            
+            label {
+                font-size: 0.75rem !important;
+                margin-bottom: 0.125rem !important;
+            }
+        }
+        
+        /* Ensure all labels are compact */
+        label {
+            margin-bottom: 0.125rem !important;
+        }
+        
+        /* Force button visibility - ensure it's always accessible */
+        #submitBtn {
+            background: black !important;
+            z-index: 100;
+        }
+        
+        /* Ensure form container can scroll */
+        .right-panel-scroll > div > div:has(form) {
+            flex: 1;
+            overflow-y: auto;
+            min-height: 0;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 640px) {
+            body {
+                flex-direction: column;
+            }
+            
+            .right-panel {
+                min-height: auto;
+                padding: 1rem;
+            }
+        }
+    </style>
+    <script>
+        // Ensure button is always visible on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('signupForm');
+            const button = document.getElementById('submitBtn');
+            
+            if (form && button) {
+                // Scroll to button if it's not visible
+                setTimeout(function() {
+                    const rect = button.getBoundingClientRect();
+                    const isVisible = rect.top >= 0 && rect.bottom <= window.innerHeight;
+                    
+                    if (!isVisible) {
+                        button.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                    }
+                }, 100);
+            }
+            
+            // Add loading state to form submission
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    // Validate before submit
+                    const email = document.getElementById('email');
+                    const password = document.getElementById('password');
+                    const passwordConfirm = document.getElementById('password_confirm');
+                    
+                    let isValid = true;
+                    
+                    if (!validateEmail(email)) {
+                        isValid = false;
+                    }
+                    
+                    if (!validatePassword(password)) {
+                        isValid = false;
+                    }
+                    
+                    if (!checkPasswordMatch()) {
+                        isValid = false;
+                    }
+                    
+                    if (!isValid) {
+                        e.preventDefault();
+                        return false;
+                    }
+                    
+                    const submitBtn = document.getElementById('submitBtn');
+                    const submitBtnText = document.getElementById('submitBtnText');
+                    const submitBtnSpinner = document.getElementById('submitBtnSpinner');
+                    
+                    if (submitBtn && submitBtnText && submitBtnSpinner) {
+                        submitBtn.disabled = true;
+                        submitBtnText.classList.add('hidden');
+                        submitBtnSpinner.classList.remove('hidden');
+                    }
+                });
+            }
+        });
+        
+        // Email validation
+        function validateEmail(input) {
+            const email = input.value.trim();
+            const errorEl = document.getElementById('emailError');
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            
+            if (!email) {
+                errorEl.textContent = 'Email is required';
+                errorEl.classList.remove('hidden');
+                input.classList.add('border-red-500');
+                return false;
+            } else if (!emailRegex.test(email)) {
+                errorEl.textContent = 'Please enter a valid email address';
+                errorEl.classList.remove('hidden');
+                input.classList.add('border-red-500');
+                return false;
+            } else {
+                errorEl.classList.add('hidden');
+                input.classList.remove('border-red-500');
+                return true;
+            }
+        }
+        
+        // Password validation and strength
+        function validatePassword(input) {
+            const password = input.value;
+            const errorEl = document.getElementById('passwordError');
+            
+            if (!password) {
+                errorEl.textContent = 'Password is required';
+                errorEl.classList.remove('hidden');
+                input.classList.add('border-red-500');
+                return false;
+            } else if (password.length < 8) {
+                errorEl.textContent = 'Password must be at least 8 characters';
+                errorEl.classList.remove('hidden');
+                input.classList.add('border-red-500');
+                return false;
+            } else {
+                errorEl.classList.add('hidden');
+                input.classList.remove('border-red-500');
+                return true;
+            }
+        }
+        
+        function checkPasswordStrength(password) {
+            const strengthDiv = document.getElementById('passwordStrength');
+            const strengthBar = document.getElementById('strengthBar');
+            const strengthText = document.getElementById('strengthText');
+            const reqLength = document.getElementById('reqLength');
+            const reqNumber = document.getElementById('reqNumber');
+            
+            if (!password) {
+                strengthDiv.classList.add('hidden');
+                return;
+            }
+            
+            strengthDiv.classList.remove('hidden');
+            
+            let strength = 0;
+            let color = 'bg-red-500';
+            let text = 'Weak';
+            
+            // Check length
+            const hasLength = password.length >= 8;
+            reqLength.querySelector('span').textContent = hasLength ? 'OK' : 'X';
+            reqLength.querySelector('span').className = hasLength ? 'text-green-500' : 'text-red-500';
+            if (hasLength) strength += 50;
+            
+            // Check number
+            const hasNumber = /\d/.test(password);
+            reqNumber.querySelector('span').textContent = hasNumber ? 'OK' : 'X';
+            reqNumber.querySelector('span').className = hasNumber ? 'text-green-500' : 'text-red-500';
+            if (hasNumber) strength += 25;
+            
+            // Check uppercase
+            const hasUpper = /[A-Z]/.test(password);
+            if (hasUpper) strength += 15;
+            
+            // Check special char
+            const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+            if (hasSpecial) strength += 10;
+            
+            // Determine strength level
+            if (strength >= 80) {
+                color = 'bg-green-500';
+                text = 'Strong';
+            } else if (strength >= 50) {
+                color = 'bg-yellow-500';
+                text = 'Medium';
+            } else {
+                color = 'bg-red-500';
+                text = 'Weak';
+            }
+            
+            strengthBar.style.width = strength + '%';
+            strengthBar.className = 'h-full transition-all duration-300 ' + color;
+            strengthText.textContent = text;
+            strengthText.className = 'text-xs font-medium ' + (strength >= 80 ? 'text-green-600' : strength >= 50 ? 'text-yellow-600' : 'text-red-600');
+        }
+        
+        // Password confirmation validation
+        function checkPasswordMatch() {
+            const password = document.getElementById('password').value;
+            const passwordConfirm = document.getElementById('password_confirm').value;
+            const errorEl = document.getElementById('passwordConfirmError');
+            const confirmInput = document.getElementById('password_confirm');
+            
+            if (!passwordConfirm) {
+                errorEl.textContent = 'Please confirm your password';
+                errorEl.classList.remove('hidden');
+                confirmInput.classList.add('border-red-500');
+                return false;
+            } else if (password !== passwordConfirm) {
+                errorEl.textContent = 'Passwords do not match';
+                errorEl.classList.remove('hidden');
+                confirmInput.classList.add('border-red-500');
+                return false;
+            } else {
+                errorEl.classList.add('hidden');
+                confirmInput.classList.remove('border-red-500');
+                return true;
+            }
+        }
+    </script>
+</head>
+<body class="flex h-screen overflow-hidden">
+    <!-- Left Panel - Dark -->
+    <div class="hidden lg:flex lg:w-1/2 bg-black text-white flex flex-col justify-between p-12 overflow-y-auto">
+        <div>
+            <a href="/" class="inline-flex items-center gap-2 text-white/80 hover:text-white transition mb-8">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                </svg>
+                Back
+            </a>
+            <h1 class="text-4xl font-bold mb-4">Auth, storage, and privacy powered by secure architecture.</h1>
+            <p class="text-lg text-white/70 leading-relaxed">
+                We use tenant isolation so every workspace stays isolated. No shared tables, no surprises—just your data.
+            </p>
+        </div>
+        <div class="flex items-center gap-2 text-white/50 text-sm">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+            </svg>
+            <span>Isolated</span>
+        </div>
+    </div>
+
+    <!-- Right Panel - Light -->
+    <div class="flex-1 bg-white overflow-y-auto right-panel-scroll flex flex-col">
+        <div class="w-full max-w-md mx-auto flex-1 flex flex-col p-3 sm:p-4" style="min-height: 0;">
+            <!-- Logo -->
+            <div class="flex items-center gap-2 mb-2 logo-section flex-shrink-0">
+                <div class="w-7 h-7 bg-black rounded-lg flex items-center justify-center">
+                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <div class="font-bold text-base">Valix</div>
+                    <div class="text-xs text-gray-500">Invoice validation for teams</div>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="flex gap-1 mb-2 bg-gray-100 p-1 rounded-lg tabs-section flex-shrink-0">
+                <a href="/login" class="flex-1 text-center py-1.5 px-3 text-gray-600 hover:text-black transition text-xs font-medium">
+                    Sign in
+                </a>
+                <a href="/signup" class="flex-1 text-center py-1.5 px-3 bg-white rounded-md text-xs font-medium shadow-sm">
+                    Create account
+                </a>
+            </div>
+
+            <!-- Form Container - Scrollable -->
+            <div class="flex-1 overflow-y-auto" style="min-height: 0;">
+                <form method="POST" action="/signup" class="space-y-1.5" id="signupForm">
+                {% if error %}
+                <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm flex items-start gap-3">
+                    <svg class="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <div class="flex-1">
+                        <p class="font-medium mb-1">Account Already Exists</p>
+                        <p class="text-xs text-red-600">{{ error }}</p>
+                        <p class="text-xs text-red-600 mt-2">
+                            <a href="/login" class="underline font-medium hover:text-red-800">Sign in instead</a> or use a different email address.
+                        </p>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if success %}
+                <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm">
+                    {{ success }}
+                </div>
+                {% endif %}
+
+                <!-- Full Name -->
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-0.5">Full name</label>
+                    <input 
+                        type="text" 
+                        name="full_name" 
+                        required
+                        placeholder="Nia Patel"
+                        class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+                    >
+                </div>
+
+                <!-- Email -->
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-0.5">Email</label>
+                    <input 
+                        type="email" 
+                        name="email" 
+                        id="email"
+                        required
+                        placeholder="you@studio.com"
+                        class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+                        onblur="validateEmail(this)"
+                    >
+                    <p id="emailError" class="text-xs text-red-600 mt-0.5 hidden"></p>
+                </div>
+
+                <!-- Password -->
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-0.5">Password <span class="text-gray-500 font-normal">(min. 8 characters)</span></label>
+                    <input 
+                        type="password" 
+                        name="password" 
+                        id="password"
+                        required
+                        minlength="8"
+                        placeholder="••••••••"
+                        class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+                        oninput="checkPasswordStrength(this.value); checkPasswordMatch();"
+                    >
+                    <!-- Password Strength Indicator -->
+                    <div id="passwordStrength" class="mt-1.5 hidden">
+                        <div class="flex items-center gap-2 mb-1">
+                            <div class="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                                <div id="strengthBar" class="h-full transition-all duration-300" style="width: 0%"></div>
+                            </div>
+                            <span id="strengthText" class="text-xs font-medium"></span>
+                        </div>
+                        <ul id="passwordRequirements" class="text-xs text-gray-600 space-y-0.5">
+                            <li id="reqLength" class="flex items-center gap-1">
+                                <span class="text-red-500">✗</span> At least 8 characters
+                            </li>
+                            <li id="reqNumber" class="flex items-center gap-1">
+                                <span class="text-red-500">✗</span> Contains a number
+                            </li>
+                        </ul>
+                    </div>
+                    <p id="passwordError" class="text-xs text-red-600 mt-0.5 hidden"></p>
+                </div>
+
+                <!-- Confirm Password -->
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-0.5">Confirm Password</label>
+                    <input 
+                        type="password" 
+                        name="password_confirm" 
+                        id="password_confirm"
+                        required
+                        minlength="8"
+                        placeholder="••••••••"
+                        class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+                        oninput="checkPasswordMatch()"
+                    >
+                    <p id="passwordConfirmError" class="text-xs text-red-600 mt-0.5 hidden"></p>
+                </div>
+
+                <!-- Organization Name (for new tenant) -->
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-0.5">Organization Name</label>
+                    <input 
+                        type="text" 
+                        name="new_tenant_name" 
+                        required
+                        placeholder="Your Company Name"
+                        class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+                    >
+                </div>
+
+                <!-- Organization Slug (optional) -->
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-0.5">Organization Slug (optional)</label>
+                    <input 
+                        type="text" 
+                        name="tenant_slug" 
+                        placeholder="your-company-slug"
+                        class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+                    >
+                    <p class="mt-0.5 text-xs text-gray-500">URL-friendly identifier for your organization</p>
+                </div>
+
+                <!-- Submit Button -->
+                <button 
+                    type="submit"
+                    id="submitBtn"
+                    class="w-full bg-black text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-gray-900 transition focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2 mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    <span id="submitBtnText">Create Account</span>
+                    <span id="submitBtnSpinner" class="hidden">
+                        <svg class="animate-spin -ml-1 mr-3 h-4 w-4 inline-block text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Creating account...
+                    </span>
+                </button>
+                </form>
+            </div>
+
+            <!-- Footer Links - Always visible at bottom -->
+            <div class="mt-1.5 mb-1 text-center text-xs text-gray-600 flex-shrink-0">
+                <p>Already have an account? <a href="/login" class="text-black font-medium hover:underline">Sign in</a></p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+
+

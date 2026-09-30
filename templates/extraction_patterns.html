@@ -1,0 +1,430 @@
+{% extends "base.html" %}
+
+{% block title %}Extraction Patterns - Valix{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Supplier Extraction Patterns</h1>
+        <div class="flex space-x-2">
+            <a href="/extraction-patterns/template" class="btn-secondary">
+                <i class="fas fa-download mr-2"></i> Download Template
+            </a>
+            <button class="btn-primary" onclick="openImportModal()">
+                <i class="fas fa-upload mr-2"></i> Import Patterns
+            </button>
+            <button class="btn-primary" onclick="openCreateModal()">
+                <i class="fas fa-plus mr-2"></i> Add Pattern
+            </button>
+        </div>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="bg-white p-4 rounded-lg shadow mb-6">
+        <h2 class="text-lg font-semibold mb-3">Filter Patterns</h2>
+        <div class="flex flex-wrap gap-4">
+            <div class="w-full md:w-1/4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Supplier</label>
+                <select id="supplier-filter" class="form-select">
+                    <option value="">All Suppliers</option>
+                    {% for supplier in supplier_names %}
+                    <option value="{{ supplier }}">{{ supplier }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="w-full md:w-1/4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Field</label>
+                <select id="field-filter" class="form-select">
+                    <option value="">All Fields</option>
+                    {% for field in field_names %}
+                    <option value="{{ field }}">{{ field }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="w-full md:w-1/4 flex items-end">
+                <button class="btn-secondary" onclick="filterPatterns()">
+                    <i class="fas fa-filter mr-2"></i> Apply Filter
+                </button>
+            </div>
+            <div class="w-full md:w-1/4 flex items-end">
+                <a href="/extraction-patterns/export" id="export-link" class="btn-secondary">
+                    <i class="fas fa-file-export mr-2"></i> Export Filtered
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tenant Patterns -->
+    <div class="bg-white rounded-lg shadow overflow-hidden mb-6">
+        <div class="px-4 py-3 bg-gray-100 border-b">
+            <h2 class="text-lg font-semibold">Tenant-Specific Patterns</h2>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Supplier</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Field</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pattern</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200" id="tenant-patterns">
+                    {% if patterns %}
+                        {% for pattern in patterns %}
+                        <tr class="pattern-row" data-supplier="{{ pattern.supplier_name }}" data-field="{{ pattern.field_name }}">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ pattern.supplier_name }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ pattern.field_name }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ pattern.pattern_type }}</td>
+                            <td class="px-6 py-4 text-sm text-gray-500 max-w-md truncate">{{ pattern.pattern_value }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ pattern.priority }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                {% if pattern.is_active %}
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Active</span>
+                                {% else %}
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <button class="text-indigo-600 hover:text-indigo-900 mr-3" onclick="openEditModal({{ pattern.id }})">Edit</button>
+                                <button class="text-red-600 hover:text-red-900" onclick="openDeleteModal({{ pattern.id }}, '{{ pattern.supplier_name }}', '{{ pattern.field_name }}')">Delete</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="7" class="px-6 py-4 text-center text-sm text-gray-500">No tenant-specific patterns found. Click "Add Pattern" to create one.</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Global Patterns -->
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="px-4 py-3 bg-gray-100 border-b">
+            <h2 class="text-lg font-semibold">Global Patterns (Read-Only)</h2>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Supplier</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Field</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pattern</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200" id="global-patterns">
+                    {% if global_patterns %}
+                        {% for pattern in global_patterns %}
+                        <tr class="pattern-row" data-supplier="{{ pattern.supplier_name }}" data-field="{{ pattern.field_name }}">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ pattern.supplier_name }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ pattern.field_name }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ pattern.pattern_type }}</td>
+                            <td class="px-6 py-4 text-sm text-gray-500 max-w-md truncate">{{ pattern.pattern_value }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ pattern.priority }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                {% if pattern.is_active %}
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Active</span>
+                                {% else %}
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">Inactive</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">No global patterns found.</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Create Pattern Modal -->
+<div id="create-modal" class="modal hidden">
+    <div class="modal-content max-w-lg">
+        <div class="modal-header">
+            <h2 class="text-xl font-bold">Add Extraction Pattern</h2>
+            <button class="modal-close" onclick="closeModal('create-modal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="create-form" action="/extraction-patterns/create" method="post">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Supplier Name</label>
+                    <input type="text" name="supplier_name" class="form-input" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Field Name</label>
+                    <select name="field_name" class="form-select" required>
+                        <option value="supplier_account_number">supplier_account_number</option>
+                        <option value="billing_period_start">billing_period_start</option>
+                        <option value="billing_period_end">billing_period_end</option>
+                        <option value="invoice_number">invoice_number</option>
+                        <option value="invoice_date">invoice_date</option>
+                        <option value="gross_amount">gross_amount</option>
+                        <option value="net_amount">net_amount</option>
+                        <option value="vat_amount">vat_amount</option>
+                        <option value="utility_type">utility_type</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Pattern Type</label>
+                    <select name="pattern_type" class="form-select" required>
+                        <option value="regex">regex</option>
+                        <option value="xpath">xpath</option>
+                        <option value="table_cell">table_cell</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Pattern Value</label>
+                    <textarea name="pattern_value" class="form-textarea h-24" required></textarea>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Priority (0-100)</label>
+                    <input type="number" name="priority" class="form-input" min="0" max="100" value="0">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                    <textarea name="notes" class="form-textarea"></textarea>
+                </div>
+                <div class="flex justify-end">
+                    <button type="button" class="btn-secondary mr-2" onclick="closeModal('create-modal')">Cancel</button>
+                    <button type="submit" class="btn-primary">Create Pattern</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Pattern Modal -->
+<div id="edit-modal" class="modal hidden">
+    <div class="modal-content max-w-lg">
+        <div class="modal-header">
+            <h2 class="text-xl font-bold">Edit Extraction Pattern</h2>
+            <button class="modal-close" onclick="closeModal('edit-modal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="edit-form" action="/extraction-patterns/update/0" method="post">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Supplier Name</label>
+                    <input type="text" name="supplier_name" id="edit-supplier-name" class="form-input" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Field Name</label>
+                    <select name="field_name" id="edit-field-name" class="form-select" required>
+                        <option value="supplier_account_number">supplier_account_number</option>
+                        <option value="billing_period_start">billing_period_start</option>
+                        <option value="billing_period_end">billing_period_end</option>
+                        <option value="invoice_number">invoice_number</option>
+                        <option value="invoice_date">invoice_date</option>
+                        <option value="gross_amount">gross_amount</option>
+                        <option value="net_amount">net_amount</option>
+                        <option value="vat_amount">vat_amount</option>
+                        <option value="utility_type">utility_type</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Pattern Type</label>
+                    <select name="pattern_type" id="edit-pattern-type" class="form-select" required>
+                        <option value="regex">regex</option>
+                        <option value="xpath">xpath</option>
+                        <option value="table_cell">table_cell</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Pattern Value</label>
+                    <textarea name="pattern_value" id="edit-pattern-value" class="form-textarea h-24" required></textarea>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Priority (0-100)</label>
+                    <input type="number" name="priority" id="edit-priority" class="form-input" min="0" max="100" value="0">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                    <div class="flex items-center">
+                        <input type="checkbox" name="is_active" id="edit-is-active" class="form-checkbox" value="true" checked>
+                        <label class="ml-2 text-sm text-gray-700">Active</label>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                    <textarea name="notes" id="edit-notes" class="form-textarea"></textarea>
+                </div>
+                <div class="flex justify-end">
+                    <button type="button" class="btn-secondary mr-2" onclick="closeModal('edit-modal')">Cancel</button>
+                    <button type="submit" class="btn-primary">Update Pattern</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Pattern Modal -->
+<div id="delete-modal" class="modal hidden">
+    <div class="modal-content max-w-md">
+        <div class="modal-header">
+            <h2 class="text-xl font-bold">Delete Extraction Pattern</h2>
+            <button class="modal-close" onclick="closeModal('delete-modal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p class="mb-4">Are you sure you want to delete this extraction pattern?</p>
+            <p class="mb-4"><strong>Supplier:</strong> <span id="delete-supplier"></span></p>
+            <p class="mb-4"><strong>Field:</strong> <span id="delete-field"></span></p>
+            <form id="delete-form" action="/extraction-patterns/delete/0" method="post">
+                <div class="flex justify-end">
+                    <button type="button" class="btn-secondary mr-2" onclick="closeModal('delete-modal')">Cancel</button>
+                    <button type="submit" class="btn-danger">Delete Pattern</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Import Patterns Modal -->
+<div id="import-modal" class="modal hidden">
+    <div class="modal-content max-w-lg">
+        <div class="modal-header">
+            <h2 class="text-xl font-bold">Import Extraction Patterns</h2>
+            <button class="modal-close" onclick="closeModal('import-modal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="import-form" action="/extraction-patterns/import" method="post" enctype="multipart/form-data">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Excel File</label>
+                    <input type="file" name="file" class="form-input" accept=".xlsx" required>
+                </div>
+                <div class="mb-4">
+                    <p class="text-sm text-gray-600">
+                        Upload an Excel file with extraction patterns. The file should have the following columns:
+                        <ul class="list-disc ml-5 mt-2">
+                            <li>Supplier Name (required)</li>
+                            <li>Field Name (required)</li>
+                            <li>Pattern Type (required)</li>
+                            <li>Pattern Value (required)</li>
+                            <li>Priority (optional)</li>
+                            <li>Notes (optional)</li>
+                        </ul>
+                    </p>
+                    <p class="text-sm text-gray-600 mt-2">
+                        You can <a href="/extraction-patterns/template" class="text-blue-600 hover:underline">download a template</a> to get started.
+                    </p>
+                </div>
+                <div class="flex justify-end">
+                    <button type="button" class="btn-secondary mr-2" onclick="closeModal('import-modal')">Cancel</button>
+                    <button type="submit" class="btn-primary">Import Patterns</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Modal functions
+    function openModal(modalId) {
+        document.getElementById(modalId).classList.remove('hidden');
+    }
+
+    function closeModal(modalId) {
+        document.getElementById(modalId).classList.add('hidden');
+    }
+
+    function openCreateModal() {
+        openModal('create-modal');
+    }
+
+    function openImportModal() {
+        openModal('import-modal');
+    }
+
+    async function openEditModal(patternId) {
+        try {
+            const response = await fetch(`/api/extraction-patterns/${patternId}`);
+            if (!response.ok) {
+                throw new Error('Failed to fetch pattern data');
+            }
+            
+            const pattern = await response.json();
+            
+            // Update form action
+            document.getElementById('edit-form').action = `/extraction-patterns/update/${patternId}`;
+            
+            // Fill form fields
+            document.getElementById('edit-supplier-name').value = pattern.supplier_name;
+            document.getElementById('edit-field-name').value = pattern.field_name;
+            document.getElementById('edit-pattern-type').value = pattern.pattern_type;
+            document.getElementById('edit-pattern-value').value = pattern.pattern_value;
+            document.getElementById('edit-priority').value = pattern.priority;
+            document.getElementById('edit-is-active').checked = pattern.is_active;
+            document.getElementById('edit-notes').value = pattern.notes || '';
+            
+            // Disable fields for global patterns
+            const isGlobal = pattern.is_global;
+            if (isGlobal) {
+                alert('Global patterns cannot be edited. Please create a tenant-specific pattern instead.');
+                return;
+            }
+            
+            openModal('edit-modal');
+        } catch (error) {
+            console.error('Error fetching pattern:', error);
+            alert('Failed to fetch pattern data. Please try again.');
+        }
+    }
+
+    function openDeleteModal(patternId, supplierName, fieldName) {
+        document.getElementById('delete-form').action = `/extraction-patterns/delete/${patternId}`;
+        document.getElementById('delete-supplier').textContent = supplierName;
+        document.getElementById('delete-field').textContent = fieldName;
+        openModal('delete-modal');
+    }
+
+    function filterPatterns() {
+        const supplierFilter = document.getElementById('supplier-filter').value.toLowerCase();
+        const fieldFilter = document.getElementById('field-filter').value.toLowerCase();
+        
+        // Update export link
+        let exportUrl = '/extraction-patterns/export';
+        const params = [];
+        if (supplierFilter) params.push(`supplier_name=${encodeURIComponent(supplierFilter)}`);
+        if (fieldFilter) params.push(`field_name=${encodeURIComponent(fieldFilter)}`);
+        if (params.length > 0) exportUrl += '?' + params.join('&');
+        document.getElementById('export-link').href = exportUrl;
+        
+        // Filter rows
+        const rows = document.querySelectorAll('.pattern-row');
+        rows.forEach(row => {
+            const supplier = row.getAttribute('data-supplier').toLowerCase();
+            const field = row.getAttribute('data-field').toLowerCase();
+            
+            const supplierMatch = !supplierFilter || supplier.includes(supplierFilter);
+            const fieldMatch = !fieldFilter || field === fieldFilter;
+            
+            if (supplierMatch && fieldMatch) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
+    // Initialize event listeners
+    document.addEventListener('DOMContentLoaded', function() {
+        // Close modals when clicking outside
+        window.addEventListener('click', function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.classList.add('hidden');
+            }
+        });
+    });
+</script>
+{% endblock %}

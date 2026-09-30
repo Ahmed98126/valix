@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}Unmapped Invoices{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Unmapped Invoices</h1>
+        <a href="/mappings" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded">
+            <i class="fas fa-link mr-2"></i> Manage Mappings
+        </a>
+    </div>
+
+    <!-- Alert Messages -->
+    {% if message %}
+    <div class="bg-{{ message_type }}-100 border-l-4 border-{{ message_type }}-500 text-{{ message_type }}-700 p-4 mb-6" role="alert">
+        <p>{{ message }}</p>
+    </div>
+    {% endif %}
+
+    <!-- Explanation -->
+    <div class="bg-blue-50 border-l-4 border-blue-500 text-blue-700 p-4 mb-6" role="alert">
+        <h3 class="font-bold">What are unmapped invoices?</h3>
+        <p class="mt-2">These are invoices where the system couldn't automatically match the supplier account number to a unit. 
+        Map them to the correct unit to process and validate these invoices.</p>
+    </div>
+
+    <!-- Unmapped Invoices -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% if unmapped_invoices %}
+            {% for invoice in unmapped_invoices %}
+            <div class="bg-white shadow rounded-lg overflow-hidden">
+                <div class="px-6 py-4 border-b">
+                    <h3 class="text-lg font-medium text-gray-900 truncate">
+                        {{ invoice.supplier_name or "Unknown Supplier" }}
+                    </h3>
+                    <p class="text-sm text-gray-600">
+                        {{ invoice.invoice_date | default("No date", true) }}
+                    </p>
+                </div>
+                <div class="px-6 py-4">
+                    <div class="mb-4">
+                        <p class="text-sm font-medium text-gray-700">Account Number:</p>
+                        <p class="text-gray-900">{{ invoice.account_number }}</p>
+                    </div>
+                    {% if invoice.address %}
+                    <div class="mb-4">
+                        <p class="text-sm font-medium text-gray-700">Address:</p>
+                        <p class="text-gray-900">{{ invoice.address }}</p>
+                    </div>
+                    {% endif %}
+                    {% if invoice.invoice_number %}
+                    <div class="mb-4">
+                        <p class="text-sm font-medium text-gray-700">Invoice Number:</p>
+                        <p class="text-gray-900">{{ invoice.invoice_number }}</p>
+                    </div>
+                    {% endif %}
+                    {% if invoice.gross_amount %}
+                    <div class="mb-4">
+                        <p class="text-sm font-medium text-gray-700">Amount:</p>
+                        <p class="text-gray-900">{{ invoice.currency | default("£", true) }} {{ invoice.gross_amount }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="px-6 py-4 bg-gray-50">
+                    <form method="post" action="/unmapped-invoices/map" class="space-y-4">
+                        <input type="hidden" name="pdf_path" value="{{ invoice.pdf_path }}">
+                        <input type="hidden" name="account_number" value="{{ invoice.account_number }}">
+                        <input type="hidden" name="supplier_name" value="{{ invoice.supplier_name }}">
+                        
+                        <div>
+                            <label for="unit_id_{{ loop.index }}" class="block text-sm font-medium text-gray-700 mb-1">Select Unit:</label>
+                            <select id="unit_id_{{ loop.index }}" name="unit_id" class="border rounded w-full py-2 px-3" required>
+                                <option value="">Select Unit</option>
+                                {% for unit in units %}
+                                <option value="{{ unit.unit_id }}">{{ unit.unit_id }} - {{ unit.building_name or "" }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label for="notes_{{ loop.index }}" class="block text-sm font-medium text-gray-700 mb-1">Notes:</label>
+                            <textarea id="notes_{{ loop.index }}" name="notes" class="border rounded w-full py-2 px-3" rows="2"></textarea>
+                        </div>
+                        
+                        <div class="flex space-x-2">
+                            <button type="submit" class="bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded flex-grow">
+                                Map & Process
+                            </button>
+                            <a href="/pdf-viewer?path={{ invoice.pdf_path | urlencode }}" target="_blank" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded">
+                                <i class="fas fa-file-pdf"></i>
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-span-full bg-white shadow rounded-lg p-6 text-center">
+                <i class="fas fa-check-circle text-green-500 text-4xl mb-4"></i>
+                <h3 class="text-xl font-medium text-gray-900 mb-2">No Unmapped Invoices</h3>
+                <p class="text-gray-600">All invoices have been successfully mapped to units.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Pagination -->
+    {% if total_pages > 1 %}
+    <div class="flex justify-between items-center mt-6">
+        <div class="text-sm text-gray-700">
+            Showing <span class="font-medium">{{ (page - 1) * per_page + 1 }}</span> to 
+            <span class="font-medium">{{ min((page * per_page), total_items) }}</span> of 
+            <span class="font-medium">{{ total_items }}</span> results
+        </div>
+        <div class="flex space-x-2">
+            {% if page > 1 %}
+            <a href="?page={{ page - 1 }}" class="bg-white border border-gray-300 text-gray-500 hover:bg-gray-50 px-4 py-2 text-sm font-medium rounded">
+                Previous
+            </a>
+            {% endif %}
+            {% if page < total_pages %}
+            <a href="?page={{ page + 1 }}" class="bg-white border border-gray-300 text-gray-500 hover:bg-gray-50 px-4 py-2 text-sm font-medium rounded">
+                Next
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,2 @@
+"""Lighthouse performance tests."""
+

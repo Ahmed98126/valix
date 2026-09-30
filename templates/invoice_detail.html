@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice #{{ invoice.invoice_number }} - Details</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 15px;
+            color: #007bff;
+            text-decoration: none;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .card h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 18px;
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 10px;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+        .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+        .info-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        .info-value {
+            font-size: 16px;
+            color: #333;
+            font-weight: 500;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .status-valid {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status-invalid {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .status-review {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .determination {
+            font-size: 18px;
+            font-weight: 600;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 10px;
+        }
+        .determination-ok {
+            background: #d4edda;
+            color: #155724;
+        }
+        .determination-dont-pay {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .determination-cot {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .no-validation {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 15px;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="/invoices" class="back-link">← Back to Invoices</a>
+            <h1>Invoice #{{ invoice.invoice_number }}</h1>
+        </div>
+
+        <div class="card">
+            <h2>Invoice Details</h2>
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">Invoice Number</span>
+                    <span class="info-value">{{ invoice.invoice_number }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Account Number</span>
+                    <span class="info-value font-mono">{{ invoice.supplier_account_number }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Supplier</span>
+                    <span class="info-value">{{ invoice.supplier_name }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Unit ID</span>
+                    <span class="info-value">{{ invoice.unit_id }}</span>
+                </div>
+                {% if invoice.address %}
+                <div class="info-item" style="grid-column: 1 / -1;">
+                    <span class="info-label">Address (from invoice)</span>
+                    <span class="info-value" style="font-size: 14px; color: #666;">{{ invoice.address }}</span>
+                </div>
+                {% endif %}
+                <div class="info-item">
+                    <span class="info-label">Utility Type</span>
+                    <span class="info-value">{{ invoice.utility_type }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Billing Period</span>
+                    <span class="info-value">{{ invoice.billing_period_start|ddmmyyyy }} to {{ invoice.billing_period_end|ddmmyyyy }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Invoice Date</span>
+                    <span class="info-value">{{ invoice.invoice_date|ddmmyyyy if invoice.invoice_date else 'N/A' }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Gross Amount</span>
+                    <span class="info-value">£{{ "%.2f"|format(invoice.gross_amount) }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Net Amount</span>
+                    <span class="info-value">£{{ "%.2f"|format(invoice.net_amount) if invoice.net_amount else 'N/A' }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">VAT Amount</span>
+                    <span class="info-value">£{{ "%.2f"|format(invoice.vat_amount) if invoice.vat_amount else 'N/A' }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Currency</span>
+                    <span class="info-value">{{ invoice.currency }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Source Batch</span>
+                    <span class="info-value">{{ invoice.source_batch or 'N/A' }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Created At</span>
+                    <span class="info-value">{{ invoice.created_at|ddmmyyyy_time }}</span>
+                </div>
+            </div>
+        </div>
+
+        {% if validation %}
+        <div class="card">
+            <h2>Validation Results</h2>
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">Validation Status</span>
+                    <span>
+                        {% if validation.validation_status == 'Valid' %}
+                            <span class="status-badge status-valid">Valid</span>
+                        {% elif validation.validation_status == 'Invalid' %}
+                            <span class="status-badge status-invalid">Invalid</span>
+                        {% else %}
+                            <span class="status-badge status-review">Needs Review</span>
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Determination</span>
+                    <span class="determination 
+                        {% if 'OK TO PAY' in validation.determination %}determination-ok
+                        {% elif 'DO NOT PAY' in validation.determination %}determination-dont-pay
+                        {% elif 'COT' in validation.determination %}determination-cot
+                        {% endif %}">
+                        {{ validation.determination }}
+                    </span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Invoice Days</span>
+                    <span class="info-value">{{ validation.invoice_days or 'N/A' }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Vacancy Overlap Days</span>
+                    <span class="info-value">{{ validation.total_vacancy_overlap_days }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Daily Rate</span>
+                    <span class="info-value">£{{ "%.2f"|format(validation.daily_rate) if validation.daily_rate else 'N/A' }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Payment Status</span>
+                    <span class="info-value">{{ validation.payment_status or 'Unpaid' }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Is Duplicate</span>
+                    <span class="info-value">{{ validation.is_duplicate }}</span>
+                </div>
+                {% if validation.duplicate_batch %}
+                <div class="info-item">
+                    <span class="info-label">Duplicate Batch</span>
+                    <span class="info-value">{{ validation.duplicate_batch }}</span>
+                </div>
+                {% endif %}
+                <div class="info-item">
+                    <span class="info-label">Validated At</span>
+                    <span class="info-value">{{ validation.validated_at|ddmmyyyy_time }}</span>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="card">
+            <div class="no-validation">
+                <p>Validating invoice...</p>
+                <script>
+                    // Automatically validate the invoice when the page loads
+                    document.addEventListener('DOMContentLoaded', function() {
+                        validateInvoice();
+                    });
+                </script>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        async function validateInvoice() {
+            if (!confirm('Validate this invoice?')) {
+                return;
+            }
+            
+            const btn = event.target;
+            btn.disabled = true;
+            btn.textContent = 'Validating...';
+            
+            try {
+                const response = await fetch('/api/validate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ batch_number: null })
+                });
+                
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    location.reload();
+                } else {
+                    alert('Validation failed: ' + (result.detail || 'Unknown error'));
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Validate This Invoice';
+            }
+        }
+    </script>
+</body>
+</html>
+
+
+
+

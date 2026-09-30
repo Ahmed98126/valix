@@ -1,0 +1,53 @@
+# Azure ignore file - files NOT to deploy
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+*.egg-info/
+dist/
+build/
+
+# Database (local)
+*.db
+*.sqlite
+*.sqlite3
+app.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment variables (already set in Azure)
+.env
+.env.local
+
+# Test files
+test_*.xlsx
+~$*.xlsx
+
+# Documentation (optional - can deploy if needed)
+*.md
+!README.md
+
+# Scripts (optional - usually not needed in production)
+scripts/
+
+# Uploads (user data - will be empty initially)
+uploads/
+
+# Cache
+__pycache__/
+
