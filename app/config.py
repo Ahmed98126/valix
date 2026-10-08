@@ -36,10 +36,10 @@ UPLOAD_DIR.mkdir(exist_ok=True)
 # Without this, links are built from request.base_url which is unreliable behind Azure's proxy.
 BASE_URL = os.getenv("BASE_URL", "").rstrip("/")
 
-# Email settings (SendGrid Web API)
-SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY", "")
-SENDGRID_FROM_EMAIL = os.getenv("SENDGRID_FROM_EMAIL", "noreply@valixs.com")
-SENDGRID_FROM_NAME = os.getenv("SENDGRID_FROM_NAME", "Valix")
+# Email settings (Resend)
+RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
+RESEND_FROM_EMAIL = os.getenv("RESEND_FROM_EMAIL", "onboarding@resend.dev")
+RESEND_FROM_NAME = os.getenv("RESEND_FROM_NAME", "Valix")
 
 # Azure Document Intelligence settings (for PDF invoice processing)
 AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT = os.getenv("AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT", "")

@@ -80,9 +80,9 @@ class TestPasswordResetEmail:
     """Tests for the email sending function — SendGrid is mocked."""
 
     def test_send_skipped_when_api_key_empty(self):
-        """send_password_reset_email must return False and not call Resend
-        when RESEND_API_KEY is empty."""
-        with patch("app.email_service.RESEND_API_KEY", ""):
+        """send_password_reset_email must return False when RESEND_API_KEY is empty."""
+        with patch.dict("os.environ", {"RESEND_API_KEY": ""}), \
+             patch("app.email_service.RESEND_API_KEY", ""):
             from app.email_service import send_password_reset_email
             result = send_password_reset_email(
                 to_email="user@example.com",
@@ -96,7 +96,7 @@ class TestPasswordResetEmail:
         with the correct recipient address."""
         fake_response = {"id": "fake-email-id-123"}
 
-        with patch("app.email_service.RESEND_API_KEY", "re_fake-key-for-test"), \
+        with patch.dict("os.environ", {"RESEND_API_KEY": "re_fake-key-for-test"}), \
              patch("app.email_service.resend.Emails.send", return_value=fake_response) as mock_send:
 
             from app.email_service import send_password_reset_email
@@ -114,7 +114,7 @@ class TestPasswordResetEmail:
 
     def test_send_returns_false_on_resend_error(self):
         """If Resend raises an exception, send must return False (not crash)."""
-        with patch("app.email_service.RESEND_API_KEY", "re_fake-key"), \
+        with patch.dict("os.environ", {"RESEND_API_KEY": "re_fake-key"}), \
              patch("app.email_service.resend.Emails.send", side_effect=Exception("network error")):
 
             from app.email_service import send_password_reset_email

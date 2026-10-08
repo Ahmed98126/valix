@@ -1,10 +1,11 @@
 """Email service for sending emails using Resend."""
 
+import os
 import resend
 from typing import Optional
 import logging
 
-from app.config import SENDGRID_API_KEY, SENDGRID_FROM_EMAIL, SENDGRID_FROM_NAME
+from app.config import RESEND_API_KEY, RESEND_FROM_EMAIL, RESEND_FROM_NAME
 
 logger = logging.getLogger(__name__)
 
@@ -26,22 +27,22 @@ def send_email(
     Returns:
         True if sent successfully, False otherwise
     """
-    # Read the key fresh each call so server restarts / env changes are picked up.
-    # The env var is still named SENDGRID_API_KEY for backwards compatibility with
-    # existing .env files and Azure App Settings — just put your re_... value in it.
-    import os
-    api_key = os.getenv("SENDGRID_API_KEY", "") or SENDGRID_API_KEY
+    # Read fresh from env each call so restarts always pick up latest value
+    api_key = os.getenv("RESEND_API_KEY", "") or RESEND_API_KEY
+    from_email = os.getenv("RESEND_FROM_EMAIL", "") or RESEND_FROM_EMAIL
+    from_name = os.getenv("RESEND_FROM_NAME", "") or RESEND_FROM_NAME
+
     if not api_key:
-        logger.warning("Email API key not configured (SENDGRID_API_KEY). Email not sent.")
+        logger.warning("RESEND_API_KEY not configured. Email not sent.")
         return False
 
     try:
         resend.api_key = api_key
 
         from_address = (
-            f"{SENDGRID_FROM_NAME} <{SENDGRID_FROM_EMAIL}>"
-            if SENDGRID_FROM_NAME
-            else SENDGRID_FROM_EMAIL
+            f"{from_name} <{from_email}>"
+            if from_name
+            else from_email
         )
 
         params: dict = {
