@@ -31,6 +31,11 @@ MAX_UPLOAD_SIZE = 50 * 1024 * 1024  # 50MB
 UPLOAD_DIR = BASE_DIR / "uploads"
 UPLOAD_DIR.mkdir(exist_ok=True)
 
+# Base URL for building absolute links in emails (password reset, email verification).
+# Set this to the public-facing URL of the app, e.g. https://valixs.com
+# Without this, links are built from request.base_url which is unreliable behind Azure's proxy.
+BASE_URL = os.getenv("BASE_URL", "").rstrip("/")
+
 # Email settings (SendGrid Web API)
 SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY", "")
 SENDGRID_FROM_EMAIL = os.getenv("SENDGRID_FROM_EMAIL", "noreply@valixs.com")

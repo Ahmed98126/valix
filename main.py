@@ -38,7 +38,7 @@ from app.auth import (
 from app.tenant_helpers import filter_by_tenant, get_user_tenant
 from app.column_mapping import get_column_mapping, map_columns
 from app.error_handling import get_user_friendly_error, create_error_response
-from app.config import UPLOAD_DIR, MAX_UPLOAD_SIZE, SECRET_KEY
+from app.config import UPLOAD_DIR, MAX_UPLOAD_SIZE, SECRET_KEY, BASE_URL
 from app.routes import router as api_router
 
 # PDF processing imports (optional - only needed if Azure is configured)
@@ -387,7 +387,7 @@ async def login(
             # Send verification email
             try:
                 from app.email_service import send_email_verification_email
-                base_url = str(request.base_url).rstrip('/')
+                base_url = BASE_URL or str(request.base_url).rstrip('/')
                 verification_url = f"{base_url}/verify-email"
                 send_email_verification_email(
                     to_email=user.email,
@@ -464,8 +464,9 @@ async def forgot_password(
             session.add(reset_token)
             session.commit()
             
-            # Get base URL from request
-            base_url = str(request.base_url).rstrip('/')
+            # Get base URL — prefer BASE_URL env var (reliable behind Azure proxy)
+            # falling back to request.base_url for local development
+            base_url = BASE_URL or str(request.base_url).rstrip('/')
             reset_url = f"{base_url}/reset-password"
             
             # Send email
@@ -771,7 +772,7 @@ async def signup(
         # Send email verification email (non-blocking - don't fail signup if email fails)
         try:
             from app.email_service import send_email_verification_email
-            base_url = str(request.base_url).rstrip('/')
+            base_url = BASE_URL or str(request.base_url).rstrip('/')
             verification_url = f"{base_url}/verify-email"
             send_email_verification_email(
                 to_email=user.email,

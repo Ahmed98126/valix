@@ -1,7 +1,6 @@
-"""Email service for sending emails using SendGrid Web API."""
+"""Email service for sending emails using Resend."""
 
-from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail
+import resend
 from typing import Optional
 import logging
 
@@ -16,50 +15,54 @@ def send_email(
     html_body: str,
     text_body: Optional[str] = None
 ) -> bool:
-    """Send an email using SendGrid Web API.
-    
+    """Send an email using Resend.
+
     Args:
         to_email: Recipient email address
         subject: Email subject
         html_body: HTML email body
-        text_body: Optional plain text body (auto-generated from HTML if not provided)
-    
+        text_body: Optional plain text body
+
     Returns:
         True if sent successfully, False otherwise
     """
-    # If SendGrid not configured, log and return False
-    if not SENDGRID_API_KEY:
-        logger.warning("SendGrid API key not configured. Email not sent.")
+    # Read the key fresh each call so server restarts / env changes are picked up.
+    # The env var is still named SENDGRID_API_KEY for backwards compatibility with
+    # existing .env files and Azure App Settings — just put your re_... value in it.
+    import os
+    api_key = os.getenv("SENDGRID_API_KEY", "") or SENDGRID_API_KEY
+    if not api_key:
+        logger.warning("Email API key not configured (SENDGRID_API_KEY). Email not sent.")
         return False
-    
+
     try:
-        # Create SendGrid message (matching SendGrid docs format)
-        # Format: "Name <email@example.com>" for from_email with name
-        from_email_str = f"{SENDGRID_FROM_NAME} <{SENDGRID_FROM_EMAIL}>" if SENDGRID_FROM_NAME else SENDGRID_FROM_EMAIL
-        
-        message = Mail(
-            from_email=from_email_str,
-            to_emails=to_email,
-            subject=subject,
-            html_content=html_body
+        resend.api_key = api_key
+
+        from_address = (
+            f"{SENDGRID_FROM_NAME} <{SENDGRID_FROM_EMAIL}>"
+            if SENDGRID_FROM_NAME
+            else SENDGRID_FROM_EMAIL
         )
-        
-        # Add plain text content if provided
+
+        params: dict = {
+            "from": from_address,
+            "to": [to_email],
+            "subject": subject,
+            "html": html_body,
+        }
         if text_body:
-            message.plain_text_content = text_body
-        
-        # Send email via SendGrid API (matching SendGrid docs)
-        sg = SendGridAPIClient(SENDGRID_API_KEY)
-        response = sg.send(message)
-        
-        # Check response status (202 is success for SendGrid)
-        if response.status_code in [200, 201, 202]:
-            logger.info(f"Email sent successfully to {to_email} (status: {response.status_code})")
+            params["text"] = text_body
+
+        response = resend.Emails.send(params)
+
+        # Resend returns a dict with an "id" key on success
+        if response and response.get("id"):
+            logger.info(f"Email sent successfully to {to_email} (id: {response['id']})")
             return True
         else:
-            logger.error(f"Failed to send email to {to_email}. Status: {response.status_code}, Body: {response.body}")
+            logger.error(f"Failed to send email to {to_email}. Response: {response}")
             return False
-        
+
     except Exception as e:
         logger.error(f"Failed to send email to {to_email}: {e}", exc_info=True)
         return False
