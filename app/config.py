@@ -17,6 +17,10 @@ DATABASE_URL = os.getenv(
     f"sqlite:///{BASE_DIR / 'app.db'}"
 )
 
+# Ensure SQLAlchemy uses psycopg2 (not psycopg3) for PostgreSQL connections
+if DATABASE_URL.startswith("postgresql://"):
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg2://", 1)
+
 # For SQLite, ensure the database directory exists
 if DATABASE_URL.startswith("sqlite"):
     os.makedirs(BASE_DIR, exist_ok=True)
