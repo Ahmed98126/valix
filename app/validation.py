@@ -75,19 +75,21 @@ def check_duplicate_invoice(
 ) -> Tuple[bool, Optional[str]]:
     """
     Check if an invoice is a duplicate based on invoice_number + gross_amount.
-    
+
+    Duplicate detection is always scoped to the invoice's tenant.  An invoice
+    with the same number/amount in a different tenant is NOT a duplicate.
+
     Returns:
         Tuple of (is_duplicate: bool, duplicate_batch_numbers: str or None)
     """
-    # Find invoices with same invoice_number and gross_amount (within same tenant)
+    # Always scope to tenant — duplicates only matter within the same tenant and
+    # an invoice without a tenant_id is an error condition; filter unconditionally.
     query = session.query(Invoice).filter(
         Invoice.invoice_number == invoice.invoice_number,
         Invoice.gross_amount == invoice.gross_amount,
-        Invoice.id != invoice.id  # Exclude the current invoice
+        Invoice.id != invoice.id,  # Exclude the current invoice
+        Invoice.tenant_id == invoice.tenant_id,  # Always tenant-scoped
     )
-    # Filter by tenant_id (duplicates only matter within same tenant)
-    if invoice.tenant_id:
-        query = query.filter(Invoice.tenant_id == invoice.tenant_id)
     
     if exclude_batch:
         query = query.filter(Invoice.source_batch != exclude_batch)
@@ -110,32 +112,38 @@ def check_duplicate_invoice(
 def calculate_vacancy_periods(session: Session, unit_id: str, tenant_id: Optional[int] = None) -> List[UnitTimeline]:
     """
     Calculate vacancy periods for a unit based on leases.
-    
+
     This implements the logic from the SQL:
     1. Gaps between consecutive leases
     2. Never-leased units (vacant from unit creation)
     3. Pre-first-lease vacancy (from unit creation to first lease)
-    
+
+    tenant_id must be supplied when there is any chance that the same unit_id
+    exists in more than one tenant (which the schema allows).
+
     Returns:
         List of UnitTimeline records representing vacancy periods
     """
-    # Get the unit
-    unit = session.query(Unit).filter(Unit.unit_id == unit_id).first()
+    # Get the unit — always filter by tenant_id when provided so we don't
+    # accidentally resolve to another tenant's copy of the same unit_id.
+    unit_query = session.query(Unit).filter(Unit.unit_id == unit_id)
+    if tenant_id is not None:
+        unit_query = unit_query.filter(Unit.tenant_id == tenant_id)
+    unit = unit_query.first()
     if not unit:
         return []
-    
-    # Get all leases for this unit, ordered by start date (with tenant filtering)
+
+    # Get all leases for this unit, ordered by start date (always tenant-scoped)
     lease_query = session.query(Lease).filter(
         Lease.unit_id == unit_id
     )
-    if tenant_id:
+    if tenant_id is not None:
         lease_query = lease_query.filter(Lease.tenant_id == tenant_id)
     leases = lease_query.order_by(Lease.lease_start).all()
-    
+
     vacancy_periods = []
-    
-    # Get unit to access tenant_id
-    unit = session.query(Unit).filter(Unit.unit_id == unit_id).first()
+
+    # Re-use the already-resolved unit (tenant-scoped lookup done above)
     if not unit:
         return vacancy_periods
     
@@ -219,26 +227,37 @@ def calculate_vacancy_periods(session: Session, unit_id: str, tenant_id: Optiona
 
 def check_invoice_vacancy_overlap(
     session: Session,
-    invoice: Invoice
+    invoice: Invoice,
+    tenant_id: Optional[int] = None,
 ) -> Tuple[int, Optional[str]]:
     """
     Check how many days of the invoice billing period overlap with vacancy periods.
-    
+
+    All database lookups are scoped to the invoice's tenant so that two tenants
+    sharing the same unit_id value cannot bleed into each other's validation.
+
+    The effective tenant_id is resolved as:
+        explicit tenant_id arg  OR  invoice.tenant_id
+
     Returns:
         Tuple of (total_overlap_days, error_message)
         - If unit not found, returns (0, "Unit not found")
         - If no leases exist, returns (invoice_days, "No leases found")
         - Otherwise returns (overlap_days, None)
     """
-    # First, check if the unit exists
-    unit = session.query(Unit).filter(Unit.unit_id == invoice.unit_id).first()
+    # Resolve effective tenant — prefer explicit arg, fall back to invoice field.
+    tid = tenant_id if tenant_id is not None else invoice.tenant_id
+
+    # First, check if the unit exists (scoped to tenant)
+    unit_query = session.query(Unit).filter(Unit.unit_id == invoice.unit_id)
+    if tid is not None:
+        unit_query = unit_query.filter(Unit.tenant_id == tid)
+    unit = unit_query.first()
     if not unit:
-        # Unit doesn't exist - can't determine liability
-        # Return a special value to indicate unit not found
         return 0, f"Unit '{invoice.unit_id}' not found in database"
-    
-    # Get all vacancy periods for this unit
-    vacancy_periods = session.query(UnitTimeline).filter(
+
+    # Get all vacancy periods for this unit (scoped to tenant)
+    vacancy_query = session.query(UnitTimeline).filter(
         UnitTimeline.unit_id == invoice.unit_id,
         UnitTimeline.status == 'vacant',
         or_(
@@ -251,18 +270,25 @@ def check_invoice_vacancy_overlap(
                 )
             )
         )
-    ).all()
-    
-    # Check if unit has any leases
-    leases = session.query(Lease).filter(Lease.unit_id == invoice.unit_id).all()
+    )
+    if tid is not None:
+        vacancy_query = vacancy_query.filter(UnitTimeline.tenant_id == tid)
+    vacancy_periods = vacancy_query.all()
+
+    # Check if unit has any leases (scoped to tenant)
+    lease_query = session.query(Lease).filter(Lease.unit_id == invoice.unit_id)
+    if tid is not None:
+        lease_query = lease_query.filter(Lease.tenant_id == tid)
+    leases = lease_query.all()
+
     if not leases:
         # Unit exists but has no leases - entire period is vacancy
         # Company is liable for the full period
         invoice_days = calculate_invoice_days(invoice)
         return invoice_days if invoice_days else 0, "Unit has no leases - company liable"
-    
+
     total_overlap = 0
-    
+
     for vacancy in vacancy_periods:
         overlap = check_date_overlap(
             invoice.billing_period_start,
@@ -271,7 +297,7 @@ def check_invoice_vacancy_overlap(
             vacancy.period_end
         )
         total_overlap += overlap
-    
+
     return total_overlap, None
 
 
@@ -446,8 +472,10 @@ def validate_invoice(
     invoice_days = calculate_invoice_days(invoice)
     daily_rate = calculate_daily_rate(invoice)
     
-    # Step 3: Check vacancy overlap
-    total_overlap, error_message = check_invoice_vacancy_overlap(session, invoice)
+    # Step 3: Check vacancy overlap (always scoped to the invoice's tenant)
+    total_overlap, error_message = check_invoice_vacancy_overlap(
+        session, invoice, tenant_id=invoice.tenant_id
+    )
     
     # Step 4: Determine validation status
     validation_status = determine_validation_status(invoice, invoice_days, total_overlap, error_message)
