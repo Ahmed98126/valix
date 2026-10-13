@@ -240,26 +240,34 @@ async def view_pdf(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
+    """Serve the source PDF for a manual-review queue item.
+
+    Authorization model (two-layer):
+      1. DB ownership — get_queue_item() filters by (queue_id, tenant_id).
+         If the item does not belong to the current user's tenant, None is
+         returned and we raise 404 without revealing existence.
+      2. Defence-in-depth — _safe_pdf_path() re-validates the path from the
+         DB: must be inside UPLOAD_ROOT, must be a regular file, must have a
+         .pdf extension.  This guards against DB-level tampering or path
+         issues on the storage layer.
     """
-    View PDF file for a queue item.
-    """
-    # Get queue item
+    # Layer 1 — tenant ownership via database lookup.
     queue_item = get_queue_item(
         queue_id=queue_id,
         tenant_id=current_user.tenant_id,
         session=session
     )
-    
+
     if not queue_item:
         raise HTTPException(status_code=404, detail="Queue item not found")
-    
-    # Check if PDF exists
-    if not os.path.exists(queue_item.pdf_path):
-        raise HTTPException(status_code=404, detail="PDF file not found")
-    
-    # Return PDF file
+
+    # Layer 2 — path confinement and type check, even though the path came
+    # from the database (defence-in-depth against DB compromise / corruption).
+    from app.routes.pdf_viewer import _safe_pdf_path
+    safe_path = _safe_pdf_path(queue_item.pdf_path)
+
     return FileResponse(
-        path=queue_item.pdf_path,
-        filename=queue_item.original_filename or os.path.basename(queue_item.pdf_path),
+        path=safe_path,
+        filename=queue_item.original_filename or safe_path.name,
         media_type="application/pdf"
     )

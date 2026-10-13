@@ -1,18 +1,60 @@
-"""PDF viewer routes for the FastAPI application."""
+"""PDF viewer routes — filesystem path access disabled.
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Query
-from fastapi.responses import HTMLResponse, FileResponse
-from fastapi.templating import Jinja2Templates
+History
+-------
+A previous design exposed two routes that accepted a raw filesystem path
+from the browser query string and served the file directly:
+
+    GET /pdf-viewer?path=<filesystem-path>   (HTML shell)
+    GET /pdf-content?path=<filesystem-path>  (bytes)
+
+Phase 1 (commit 732f64b) added path confinement to UPLOAD_ROOT and a .pdf
+extension allow-list via _safe_pdf_path().
+
+Phase 2 analysis found that both endpoints were dead (no active UI caller)
+because the in-memory UNMAPPED_QUEUE they depended on is never populated.
+Rather than re-purpose them around ManualReviewQueue, the filesystem-serving
+routes have been disabled entirely to eliminate unnecessary attack surface.
+
+Both routes now return HTTP 410 Gone.  Authentication is still checked
+first so unauthenticated callers receive 401, not 410.
+
+Active PDF serving
+------------------
+PDF files in the manual-review workflow are served by:
+
+    GET /manual-review/{queue_id}/pdf   (app/routes/manual_review.py)
+
+That route performs DB-backed tenant-ownership verification (ManualReviewQueue
+filtered by queue_id + tenant_id) before calling _safe_pdf_path() for
+defence-in-depth path confinement.
+
+_safe_pdf_path() helper
+-----------------------
+The helper is kept here because:
+  - unit tests in tests/unit/test_pdf_path_traversal.py depend on it
+  - app/routes/manual_review.py imports it for defence-in-depth
+
+Future backlog
+--------------
+Processed invoice → source-document persistence:
+  Invoice currently has tenant_id and source_batch but no durable source
+  PDF reference.  If processed invoices need source-document viewing later,
+  introduce a proper persistent document reference and tenant-owned
+  authorization model. Do NOT repurpose /pdf-viewer or /pdf-content for this.
+"""
+
 from pathlib import Path
+
+from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app.auth import get_current_user
 from app.config import UPLOAD_DIR
 
 router = APIRouter()
-templates = Jinja2Templates(directory="templates")
 
 # Resolve UPLOAD_DIR once at import time so symlinks in the dir itself are
-# already followed. Every candidate path is resolved against this root.
+# already followed.  Every candidate path is resolved against this root.
 UPLOAD_ROOT: Path = Path(UPLOAD_DIR).resolve()
 
 
@@ -30,7 +72,7 @@ def _safe_pdf_path(path_str: str) -> Path:
        inside the upload directory.
 
     Returns the resolved :class:`~pathlib.Path` on success.
-    Raises :class:`~fastapi.HTTPException` (403 or 404) on failure.
+    Raises :class:`~fastapi.HTTPException` (400, 403, or 404) on failure.
     """
     try:
         # resolve() turns any path into an absolute, symlink-free path.
@@ -56,37 +98,33 @@ def _safe_pdf_path(path_str: str) -> Path:
     return resolved
 
 
-@router.get("/pdf-viewer", response_class=HTMLResponse)
+_DISABLED_DETAIL = (
+    "This endpoint has been removed. "
+    "PDF access is provided by GET /manual-review/{queue_id}/pdf"
+)
+
+
+@router.get("/pdf-viewer")
 async def view_pdf(
     request: Request,
-    path: str = Query(...),
-    current_user = Depends(get_current_user)
+    current_user=Depends(get_current_user),
 ):
-    """Display PDF viewer page."""
-    # Validate path before probing the filesystem so we don't become a
-    # file-existence oracle for paths outside the upload directory.
-    _safe_pdf_path(path)
+    """Disabled — returns HTTP 410 Gone.
 
-    pdf_url = f"/pdf-content?path={path}"
-
-    return templates.TemplateResponse(
-        "pdf_viewer.html",
-        {
-            "request": request,
-            "pdf_url": pdf_url
-        }
-    )
+    Authentication is still enforced so unauthenticated callers receive 401.
+    No filesystem access of any kind occurs.
+    """
+    raise HTTPException(status_code=410, detail=_DISABLED_DETAIL)
 
 
 @router.get("/pdf-content")
 async def get_pdf_content(
-    path: str = Query(...),
-    current_user = Depends(get_current_user)
+    request: Request,
+    current_user=Depends(get_current_user),
 ):
-    """Serve PDF content — path must be inside the configured upload directory."""
-    safe_path = _safe_pdf_path(path)
+    """Disabled — returns HTTP 410 Gone.
 
-    return FileResponse(
-        path=safe_path,
-        media_type="application/pdf"
-    )
+    Authentication is still enforced so unauthenticated callers receive 401.
+    No filesystem access of any kind occurs.
+    """
+    raise HTTPException(status_code=410, detail=_DISABLED_DETAIL)
